@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+
+# Bun and TypeScript build output
+dist/
+build/
+coverage/
+*.tsbuildinfo
+*.log
+*.pid
+logs/
+tmp/
+temp/
+
+# Rust
+target/
+
+# Native addon build products
+libs/native/artifacts/*
+!libs/native/artifacts/.gitkeep
+*.node
+.cache/
+
+# Local services and secrets
+.env
+.env.*
+!.env.example
+.bastion/runs/
+.bastion/*.jsonl
+.claude/settings.local.json
+.codex/
+plans/
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Test artifacts
+test-results/

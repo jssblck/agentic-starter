@@ -1,0 +1,19 @@
+{
+  "name": "@starter/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts"
+  },
+  "dependencies": {
+    "@elysia/eden": "1.4.10",
+    "@elysia/openapi": "1.4.15",
+    "@starter/db": "workspace:*",
+    "@starter/domain": "workspace:*",
+    "@starter/native": "workspace:*",
+    "@starter/version": "workspace:*",
+    "elysia": "1.4.29"
+  }
+}

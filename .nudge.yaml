@@ -1,0 +1,156 @@
+version: 1
+
+rules:
+  - name: typescript-no-any
+    description: Keep unknown data unknown until a boundary decoder proves its shape
+    message: 'Replace `any` with `unknown`, a generic, or a concrete type, then narrow it before use.'
+    on:
+      - hook: PreToolUse
+        tool: Write
+        file: '**/*.ts'
+        content:
+          - kind: SyntaxTree
+            language: typescript
+            query: |
+              ((predefined_type) @type
+                (#eq? @type "any"))
+      - hook: PreToolUse
+        tool: Edit
+        file: '**/*.ts'
+        new_content:
+          - kind: SyntaxTree
+            language: typescript
+            query: |
+              ((predefined_type) @type
+                (#eq? @type "any"))
+
+  - name: typescript-no-non-null-assertion
+    description: Make missing values explicit instead of suppressing the checker
+    message: 'Replace the non-null assertion with a guard, optional chaining, or a decoder that proves the value exists.'
+    on:
+      - hook: PreToolUse
+        tool: Write
+        file: '**/*.ts'
+        content:
+          - kind: SyntaxTree
+            language: typescript
+            query: |
+              ((non_null_expression) @assertion
+                (#match? @assertion "!$"))
+      - hook: PreToolUse
+        tool: Edit
+        file: '**/*.ts'
+        new_content:
+          - kind: SyntaxTree
+            language: typescript
+            query: |
+              ((non_null_expression) @assertion
+                (#match? @assertion "!$"))
+
+  - name: typescript-no-checker-suppression
+    description: Do not silence TypeScript diagnostics
+    message: 'Remove the TypeScript suppression and model or narrow the value correctly.'
+    on:
+      - hook: PreToolUse
+        tool: Write
+        file: '**/*.ts'
+        content:
+          - kind: Regex
+            pattern: '@ts-(?:ignore|nocheck|expect-error)'
+      - hook: PreToolUse
+        tool: Edit
+        file: '**/*.ts'
+        new_content:
+          - kind: Regex
+            pattern: '@ts-(?:ignore|nocheck|expect-error)'
+
+  - name: typescript-no-double-cast
+    description: Double assertions erase the evidence the type checker is supposed to provide
+    message: 'Replace the double assertion with a runtime decoder, type guard, or correctly typed boundary adapter.'
+    on:
+      - hook: PreToolUse
+        tool: Write
+        file: '**/*.ts'
+        content:
+          - kind: Regex
+            pattern: "\\bas\\s+unknown\\s+as\\b"
+      - hook: PreToolUse
+        tool: Edit
+        file: '**/*.ts'
+        new_content:
+          - kind: Regex
+            pattern: "\\bas\\s+unknown\\s+as\\b"
+
+  - name: rust-no-unwrap
+    description: Preserve error context at the native boundary
+    message: 'Handle the error or use `.expect("specific invariant")` with useful context, then retry.'
+    on:
+      - hook: PreToolUse
+        tool: Write
+        file: '**/*.rs'
+        content:
+          - kind: SyntaxTree
+            language: rust
+            query: |
+              (call_expression
+                function: (field_expression
+                  field: (field_identifier) @method)
+                (#eq? @method "unwrap"))
+      - hook: PreToolUse
+        tool: Edit
+        file: '**/*.rs'
+        new_content:
+          - kind: SyntaxTree
+            language: rust
+            query: |
+              (call_expression
+                function: (field_expression
+                  field: (field_identifier) @method)
+                (#eq? @method "unwrap"))
+
+  - name: worktree-no-fixed-port
+    description: Let eph assign a distinct port to every worktree run service
+    message: 'Use `port=auto` for `run=` services; fixed development ports collide across worktrees.'
+    on:
+      - hook: PreToolUse
+        tool: Write
+        file: '.eph'
+        content:
+          - kind: Regex
+            pattern: '(?m)^run=.+\n(?:[^\n\[]+\n)*port=[0-9]+$'
+      - hook: PreToolUse
+        tool: Edit
+        file: '.eph'
+        new_content:
+          - kind: Regex
+            pattern: '(?m)^run=.+\n(?:[^\n\[]+\n)*port=[0-9]+$'
+
+  - name: use-bun-run
+    description: Keep one JavaScript package-manager surface
+    action: substitute
+    on:
+      - hook: PreToolUse
+        tool: Bash
+        command:
+          - kind: Regex
+            pattern: '^npm run (?P<script>.+)$'
+            replace: 'bun run {{ $script }}'
+
+  - name: use-bunx
+    description: Use Bun's package runner
+    action: substitute
+    on:
+      - hook: PreToolUse
+        tool: Bash
+        command:
+          - kind: Regex
+            pattern: '^npx (?P<command>.+)$'
+            replace: 'bunx {{ $command }}'
+
+  - name: schema-change-reminder
+    message: 'A database schema change requires generated SQL, matching Elysia response schemas when the API moves, and focused migration tests.'
+    on:
+      - hook: UserPromptSubmit
+        prompt:
+          - kind: Regex
+            pattern: '(?i)(database|schema|migration|column|postgres|drizzle)'

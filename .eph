@@ -1,0 +1,33 @@
+# Every Git worktree receives its own Postgres container, volume, and host ports.
+roles_order=dep,app
+
+[postgres]
+image=postgres:18.4-alpine
+role=dep
+port=5432
+env.POSTGRES_USER=todo
+env.POSTGRES_PASSWORD=todo
+env.POSTGRES_DB=todo
+volume=pgdata:/var/lib/postgresql
+healthcheck=pg_isready -U todo -d todo
+
+[server]
+run=bun --hot bins/server/src/main.ts
+role=app
+port=auto
+env.PORT=${server.port}
+pre-start=bun run native:ensure && bun run db:migrate
+
+[todoctl]
+run=bun bins/cli/src/main.ts serve
+role=app
+port=auto
+env.PORT=${todoctl.port}
+pre-start=bun run native:ensure
+
+[env]
+APP_ENV=development
+LOG_LEVEL=debug
+DATABASE_URL=postgres://todo:todo@localhost:${postgres.port}/todo
+TODO_API_URL=http://localhost:${server.port}
+TODOCTL_URL=http://localhost:${todoctl.port}

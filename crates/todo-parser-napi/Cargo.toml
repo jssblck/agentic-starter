@@ -1,0 +1,20 @@
+[package]
+name = "todo-parser-napi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+build = "build.rs"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi.workspace = true
+napi-derive.workspace = true
+serde_json.workspace = true
+todo-parser = { path = "../todo-parser" }
+
+[build-dependencies]
+napi-build.workspace = true

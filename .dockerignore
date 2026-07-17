@@ -1,0 +1,10 @@
+.git
+.github
+node_modules
+target
+dist
+.cache
+.bastion
+coverage
+*.md
+!README.md

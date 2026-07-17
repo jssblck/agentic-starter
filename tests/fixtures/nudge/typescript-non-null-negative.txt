@@ -1,0 +1,3 @@
+const appliedRows = await sql<AppliedMigration[]>`
+  select name, checksum from starter_migrations
+`

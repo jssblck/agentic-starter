@@ -1,0 +1,9 @@
+[postgres]
+image=postgres:18.4-alpine
+role=dep
+port=5432
+
+[server]
+run=bun bins/server/src/main.ts
+role=app
+port=auto

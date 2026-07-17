@@ -1,0 +1,59 @@
+name: Bastion
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+  actions: read
+
+concurrency:
+  group: bastion-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: bastion review
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      vars.BASTION_ENABLED == 'true'
+    env:
+      HAS_BASTION_APP: ${{ secrets.BASTION_APP_ID != '' && secrets.BASTION_APP_PRIVATE_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Install Codex
+        run: npm install --global @openai/codex
+      - name: Authenticate Codex
+        env:
+          CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CODEX_AUTH_JSON" ]; then
+            echo "::error::Set CODEX_AUTH_JSON or replace this step with a per-author credential mapping." >&2
+            exit 1
+          fi
+          mkdir -p "$HOME/.codex"
+          printf '%s' "$CODEX_AUTH_JSON" > "$HOME/.codex/auth.json"
+          chmod 600 "$HOME/.codex/auth.json"
+      - id: app-token
+        name: Mint optional Bastion app token
+        if: env.HAS_BASTION_APP == 'true'
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.BASTION_APP_ID }}
+          private-key: ${{ secrets.BASTION_APP_PRIVATE_KEY }}
+      - name: Review and report
+        uses: jssblck/bastion@v0
+        with:
+          report-token: ${{ steps.app-token.outputs.token || github.token }}

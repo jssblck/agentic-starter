@@ -1,0 +1,4 @@
+[server]
+run=bun bins/server/src/main.ts
+role=app
+port=3000

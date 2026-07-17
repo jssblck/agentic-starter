@@ -1,0 +1,2 @@
+// Narrow the external value before use.
+const value = parseValue(externalValue)

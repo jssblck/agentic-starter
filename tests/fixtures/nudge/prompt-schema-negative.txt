@@ -1,0 +1,1 @@
+Add a parser test for an empty title.

@@ -1,0 +1,7 @@
+# Protect the policy and release surfaces from self-modifying agent changes.
+/.github/workflows/ @your-org/platform
+/.bastion.yaml @your-org/platform
+/.nudge.yaml @your-org/platform
+/scripts/ @your-org/platform
+/tools/write-version.ts @your-org/platform
+/tools/build-cli.ts @your-org/platform

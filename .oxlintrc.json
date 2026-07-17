@@ -1,0 +1,41 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "error",
+    "perf": "warn",
+    "suspicious": "error"
+  },
+  "plugins": ["typescript", "import", "unicorn", "promise"],
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "typescript/no-non-null-assertion": "error",
+    "typescript/no-unsafe-argument": "error",
+    "typescript/no-unsafe-assignment": "error",
+    "typescript/no-unsafe-call": "error",
+    "typescript/no-unsafe-member-access": "error",
+    "typescript/no-unsafe-return": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/switch-exhaustiveness-check": "error",
+    "typescript/consistent-type-imports": "error",
+    "promise/always-return": "error",
+    "unicorn/prefer-node-protocol": "error",
+    "unicorn/no-array-for-each": "off",
+    "no-await-in-loop": "off"
+  },
+  "ignorePatterns": ["dist/**", "target/**", "libs/native/artifacts/**"],
+  "overrides": [
+    {
+      "files": ["libs/native/src/load.ts"],
+      "rules": {
+        "typescript/no-unsafe-assignment": "off",
+        "typescript/no-unsafe-call": "off"
+      }
+    },
+    {
+      "files": ["tools/**/*.ts"],
+      "rules": {
+        "no-console": "off"
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+Worktree Todo Starter
+Copyright 2026 The Worktree Todo Starter contributors
+
+This template integrates with independently licensed tools and libraries,
+including Bun, TypeScript, Elysia, Drizzle ORM, napi-rs, Oxlint, Oxfmt, Nudge,
+Bastion, and eph. Their names and links are used for attribution and do not
+imply endorsement. Review dependency licenses before distributing a customized
+product.
