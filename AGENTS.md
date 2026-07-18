@@ -6,7 +6,7 @@ This repository is optimized for several coding agents working in separate Git w
 
 1. Read `docs/architecture.md` and the nearest domain document before editing.
 2. Run `bun run doctor` to see which local tools are available.
-3. Use `eph dev` for the full local stack. Every worktree gets isolated Postgres data and ports.
+3. Run `eph dev` only when the task needs the local service stack. Every worktree gets isolated Postgres data and ports.
 4. Run `bun run native:ensure` only when a real native integration test or executable needs the Rust addon.
 
 ## Classify the change before running checks
@@ -17,6 +17,8 @@ This repository is optimized for several coding agents working in separate Git w
 - API contract: update the Elysia schemas in `libs/api`, then run the API tests and TypeScript checks so Eden callers are checked against the new route type.
 - Database schema: edit `libs/db/src/schema.ts`, run `bun run db:generate`, inspect the SQL, and add migration tests. Never edit a migration that may already have shipped.
 - Release/tooling: run `bun run version:check` and `bun run release:check`.
+
+Run the full `bun run check` when the changeset is coherent, not after every small edit.
 
 ## TypeScript invariants
 
@@ -39,7 +41,7 @@ This repository is optimized for several coding agents working in separate Git w
 
 ## Agent feedback loops
 
-Nudge catches deterministic violations before writes and in CI. Bastion reviews semantic invariants after a coherent changeset exists. Do not move a deterministic rule into an agent reviewer merely because it is easier to write as prose.
+Nudge catches deterministic violations before writes and in CI. Bastion reviews semantic invariants after a coherent changeset exists. Do not move a deterministic rule into an agent reviewer merely because it is easier to write as prose. Reviewers are single-concern: address blocking findings within a reviewer's scope, and when a reviewer drifts into style or unrelated design, refine its prompt rather than accumulating exceptions in application code.
 
 Before opening a pull request:
 
@@ -48,7 +50,7 @@ bun run check
 bastion review --base main
 ```
 
-When a debugging incident yields a durable repository-specific lesson, record it with `nudge learn add` and include the problem, fix, and verification.
+When a debugging incident yields a durable repository-specific lesson, record it with `nudge learn add` and include the problem, fix, and verification. Do not store generic language advice or temporary task state.
 
 When a changeset settles a design choice whose silent reversal a maintainer would object to, add a decision record in the same changeset using the `decision-records` skill; most changesets add none. Treat a choice with no decision record as incidental rather than intentional. Superseding or reversing a recorded decision requires explicit human approval: propose the change and stop.
 

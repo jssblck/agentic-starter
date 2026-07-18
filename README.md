@@ -86,7 +86,6 @@ Permanent base, kept by every derived project:
 - [Customizing the starter](docs/customizing.md) is the authoritative capability and verification guide.
 - [Technology choices](docs/technology.md) explains why the template uses its current stack and which assumptions should trigger a different choice.
 - [Architecture](docs/architecture.md) defines the permanent base and dependency boundaries.
-- [Agent workflow](docs/agent-workflow.md) explains the development and review loop inherited by the new project.
 - [Worktrees](docs/worktrees.md) covers per-agent isolation of checkouts, services, and build state.
 - [Type safety](docs/type-safety.md) explains the layered checks and preferred modeling patterns.
 

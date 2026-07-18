@@ -1,14 +1,7 @@
 # Contributing
 
-Read `AGENTS.md` and `docs/architecture.md` before changing dependency boundaries.
+Workflow, check classification, and invariants live in `AGENTS.md`; read it before making changes.
 
-Use a Git worktree for each branch, run the check set appropriate to the change class, and regenerate committed artifacts from their source. Pull requests that modify database schema, HTTP API behavior, native interfaces, policy files, or release workflows should explain the rollout or compatibility effect.
+Pull requests that modify database schema, HTTP API behavior, native interfaces, policy files, or release workflows should explain the rollout or compatibility effect.
 
-Before requesting review:
-
-```sh
-bun run check
-bastion review --base main
-```
-
-Do not commit generated release-version rewrites from an ordinary branch. Do commit dependency lockfiles and SQL migrations.
+Commit dependency lockfiles and SQL migrations. Do not commit generated release-version rewrites from an ordinary branch.

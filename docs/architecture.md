@@ -18,6 +18,8 @@ bins/server ----> libs/api (Elysia factory)
    +-----------> libs/db ----------> PostgreSQL
    +-----------> libs/native -------> todo-parser-napi -------> todo-parser
    +-----------> libs/version
+
+libs/api + libs/db + libs/native + bins ----> libs/domain (shared todo types)
 ```
 
 The diagram shows the example instance of the permanent shape. The rules below are the permanent invariants; the todo package names that express them belong to the example and are renamed or deleted with their capabilities.
@@ -31,6 +33,7 @@ Rules:
 5. `libs/native` is the only TypeScript package that loads `.node` code. Its output decoder treats the addon as untrusted.
 6. `libs/db` owns Drizzle and raw database access. Applications depend on `TodoRepository`.
 7. `libs/version` supplies one build identity to every TypeScript surface; Rust receives the same identity through its build script.
+8. `libs/domain` owns the shared domain types and their type guards. Every application package may depend on it; it depends only on `libs/version`.
 
 ## HTTP and native boundaries
 
