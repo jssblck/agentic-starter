@@ -20,7 +20,7 @@ A Nudge rule should be mechanically true or false. Do not use it for architectur
 
 ### Runtime decoders
 
-Static types cannot prove external bytes. Decode environment variables, JSON, database-adjacent dynamic data, OpenAPI errors, and native output before creating domain values.
+Static types cannot prove external bytes. Decode environment variables, JSON, database-adjacent dynamic data, HTTP API error responses, and native output before creating domain values.
 
 `libs/native/src/decode.ts` shows the intended pattern:
 

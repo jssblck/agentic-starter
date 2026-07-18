@@ -11,7 +11,7 @@ Nudge should catch mechanical policy violations immediately. Keep the fast loop 
 - TypeScript product change: typecheck and focused tests.
 - Rust parser change: parser crate only.
 - Boundary change: materialize native addon and run integration tests.
-- API change: regenerate OpenAPI.
+- API change: update the Elysia schemas and Eden client facade, then run the API tests and TypeScript checks.
 - schema change: generate and inspect SQL.
 
 Do not run the full repository check after every small edit. Run it when the changeset is coherent.
