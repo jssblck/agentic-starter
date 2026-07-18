@@ -22,11 +22,11 @@ Run the full `bun run check` when the changeset is coherent, not after every sma
 
 ## TypeScript invariants
 
-- Keep `bins` as thin executable boundaries: parse process inputs, construct dependencies, invoke `libs`, and render process output. Business logic and testable workflows belong in dependency-injected libraries.
+- Keep `apps` as thin entrypoints: parse inputs from the surface they own (process, HTTP, DOM), construct dependencies, invoke `libs`, and render output back to that surface. Business logic and testable workflows belong in dependency-injected libraries.
 - Do not introduce `any`, TypeScript suppression comments, non-null assertions, or double assertions.
 - Treat all external data as `unknown` until a boundary decoder proves its shape.
 - Represent finite states with tagged unions and handle them exhaustively.
-- Define commands, options, environment variables, help, and version handling with Incur in `bins`. Only TODO text crosses into the Rust parser.
+- Define commands, options, environment variables, help, and version handling with Incur in `apps`. Only TODO text crosses into the Rust parser.
 - Keep Incur definitions in `cli.ts` and executable entrypoints in `main.ts`. A Bun entrypoint that default-exports an Incur CLI auto-starts its Fetch server; only `todoctl serve` may start that surface, while `todo-server` serves HTTP through Elysia.
 - Keep raw SQL and Drizzle access inside `libs/db`.
 - Keep direct `.node` loading inside `libs/native/src/load.ts`; the rest of the code depends on `TodoParser`.

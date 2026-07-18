@@ -38,7 +38,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 async function packageManifestPaths(): Promise<readonly string[]> {
   const paths = [join(root, 'package.json')]
-  for (const directory of ['bins', 'libs']) {
+  for (const directory of ['apps', 'libs']) {
     const glob = new Bun.Glob('*/package.json')
     for await (const path of glob.scan({ cwd: join(root, directory), absolute: true })) {
       paths.push(path)

@@ -1,4 +1,4 @@
 [server]
-run=bun bins/server/src/main.ts
+run=bun apps/server/src/main.ts
 role=app
 port=3000

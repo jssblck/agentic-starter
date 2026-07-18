@@ -19,7 +19,7 @@
         "typescript": "7.0.2",
       },
     },
-    "bins/cli": {
+    "apps/cli": {
       "name": "@starter/cli",
       "version": "0.0.0",
       "bin": {
@@ -33,7 +33,7 @@
         "incur": "0.4.17",
       },
     },
-    "bins/server": {
+    "apps/server": {
       "name": "@starter/server",
       "version": "0.0.0",
       "dependencies": {
@@ -418,7 +418,7 @@
 
     "@starter/api": ["@starter/api@workspace:libs/api"],
 
-    "@starter/cli": ["@starter/cli@workspace:bins/cli"],
+    "@starter/cli": ["@starter/cli@workspace:apps/cli"],
 
     "@starter/db": ["@starter/db@workspace:libs/db"],
 
@@ -426,7 +426,7 @@
 
     "@starter/native": ["@starter/native@workspace:libs/native"],
 
-    "@starter/server": ["@starter/server@workspace:bins/server"],
+    "@starter/server": ["@starter/server@workspace:apps/server"],
 
     "@starter/version": ["@starter/version@workspace:libs/version"],
 

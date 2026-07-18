@@ -12,14 +12,14 @@ volume=pgdata:/var/lib/postgresql
 healthcheck=pg_isready -U todo -d todo
 
 [server]
-run=bun --hot bins/server/src/main.ts
+run=bun --hot apps/server/src/main.ts
 role=app
 port=auto
 env.PORT=${server.port}
 pre-start=bun run native:ensure && bun run db:migrate
 
 [todoctl]
-run=bun bins/cli/src/main.ts serve
+run=bun apps/cli/src/main.ts serve
 role=app
 port=auto
 env.PORT=${todoctl.port}

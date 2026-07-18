@@ -22,6 +22,6 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["bun"]
   },
-  "include": ["bins/**/*.ts", "libs/**/*.ts", "tools/**/*.ts", "tests/**/*.ts"],
+  "include": ["apps/**/*.ts", "libs/**/*.ts", "tools/**/*.ts", "tests/**/*.ts"],
   "exclude": ["**/node_modules/**", "dist/**", "target/**", ".cache/**"]
 }

@@ -16,7 +16,7 @@ ARG PROJECT_VERSION
 ENV PROJECT_VERSION=${PROJECT_VERSION}
 WORKDIR /app
 COPY package.json bun.lock bunfig.toml tsconfig.json Cargo.toml ./
-COPY bins ./bins
+COPY apps ./apps
 COPY libs ./libs
 COPY tools ./tools
 RUN bun install --production --frozen-lockfile
@@ -33,7 +33,7 @@ ENV PROJECT_VERSION=${PROJECT_VERSION} \
 WORKDIR /app
 COPY --from=app-builder --chown=bun:bun /app/package.json /app/bunfig.toml ./
 COPY --from=app-builder --chown=bun:bun /app/node_modules ./node_modules
-COPY --from=app-builder --chown=bun:bun /app/bins ./bins
+COPY --from=app-builder --chown=bun:bun /app/apps ./apps
 COPY --from=app-builder --chown=bun:bun /app/libs ./libs
 COPY --chown=bun:bun scripts/docker-entrypoint.sh /usr/local/bin/todo-entrypoint
 RUN chmod +x /usr/local/bin/todo-entrypoint
@@ -42,4 +42,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 \
   CMD bun -e "const response = await fetch('http://127.0.0.1:' + (process.env.PORT ?? '3000') + '/health'); if (!response.ok) process.exit(1)"
 ENTRYPOINT ["todo-entrypoint"]
-CMD ["bun", "bins/server/src/main.ts"]
+CMD ["bun", "apps/server/src/main.ts"]

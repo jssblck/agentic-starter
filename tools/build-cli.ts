@@ -44,7 +44,7 @@ await run(['bun', 'tools/native-cache.ts', '--release', '--target', target.rust]
 await run([
   'bun',
   'build',
-  'bins/cli/src/main.ts',
+  'apps/cli/src/main.ts',
   '--compile',
   `--target=${target.bun}`,
   '--minify',

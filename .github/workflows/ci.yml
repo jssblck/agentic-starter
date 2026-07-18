@@ -105,7 +105,7 @@ jobs:
       - run: bun run test:integration
       - name: Smoke-test the CLI against the server
         run: |
-          bun bins/server/src/main.ts >server.log 2>&1 &
+          bun apps/server/src/main.ts >server.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
           ready=0
@@ -120,5 +120,5 @@ jobs:
             cat server.log
             exit 1
           fi
-          TODO_API_URL=http://localhost:3000 bun bins/cli/src/main.ts add "CI todo @actions #smoke !high"
-          TODO_API_URL=http://localhost:3000 bun bins/cli/src/main.ts list
+          TODO_API_URL=http://localhost:3000 bun apps/cli/src/main.ts add "CI todo @actions #smoke !high"
+          TODO_API_URL=http://localhost:3000 bun apps/cli/src/main.ts list

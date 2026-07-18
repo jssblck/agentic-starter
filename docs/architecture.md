@@ -9,17 +9,17 @@ Bun and TypeScript are the permanent control plane for projects derived from thi
 ## Dependency direction
 
 ```text
-bins/cli -------> libs/api (Eden client) -------> HTTP API
+apps/cli -------> libs/api (Eden client) -------> HTTP API
    |
    +-----------> libs/native -------> todo-parser-napi -------> todo-parser
 
-bins/server ----> libs/api (Elysia factory)
+apps/server ----> libs/api (Elysia factory)
    |
    +-----------> libs/db ----------> PostgreSQL
    +-----------> libs/native -------> todo-parser-napi -------> todo-parser
    +-----------> libs/version
 
-libs/api + libs/db + libs/native + bins ----> libs/domain (shared todo types)
+libs/api + libs/db + libs/native + apps ----> libs/domain (shared todo types)
 ```
 
 The diagram shows the example instance of the permanent shape. The rules below are the permanent invariants; the todo package names that express them belong to the example and are renamed or deleted with their capabilities.
@@ -28,7 +28,7 @@ Rules:
 
 1. `todo-parser` is pure Rust. It has no Bun, Node-API, HTTP, or database concerns.
 2. `todo-parser-napi` translates errors and serialization. It contains no domain parsing logic.
-3. `bins` contain executable boundaries only: Incur command and environment schemas, dependency construction, library calls, and process-oriented output. Incur parses process input and formats command results; only TODO text crosses into the Rust parser.
+3. `apps` contain entrypoint boundaries only: Incur command and environment schemas, dependency construction, library calls, and surface-oriented output. Incur parses process input and formats command results; only TODO text crosses into the Rust parser.
 4. `libs/api` owns the dependency-injected Elysia factory and its Eden client facade. The exported `App` type keeps their HTTP calls aligned without code generation.
 5. `libs/native` is the only TypeScript package that loads `.node` code. Its output decoder treats the addon as untrusted.
 6. `libs/db` owns Drizzle and raw database access. Applications depend on `TodoRepository`.

@@ -5,19 +5,19 @@
   "description": "A Bun, TypeScript, Rust, Elysia, Drizzle, and Postgres monorepo starter designed for parallel coding-agent worktrees.",
   "license": "Apache-2.0",
   "workspaces": [
-    "bins/*",
+    "apps/*",
     "libs/*"
   ],
   "scripts": {
     "bootstrap": "bun install --frozen-lockfile && bun run native:ensure",
     "doctor": "bun tools/doctor.ts",
     "dev": "eph dev",
-    "dev:server": "bun --hot bins/server/src/main.ts",
+    "dev:server": "bun --hot apps/server/src/main.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "oxlint --type-aware --deny-warnings .",
     "fmt": "oxfmt .",
     "fmt:check": "oxfmt --check .",
-    "test": "bun test bins libs tools",
+    "test": "bun test apps libs tools",
     "test:integration": "bun test tests/integration",
     "check": "bun run fmt:check && bun run lint && bun run typecheck && bun run test && bun run rust:check && bun run policy:check && bun run version:check && bun run release:check && bun run db:migrations:check",
     "rust:fmt": "cargo fmt --all",
@@ -31,10 +31,10 @@
     "version:write": "bun tools/write-version.ts",
     "version:check": "bun tools/check-version.ts",
     "release:check": "bun tools/check-release.ts",
-    "cli": "bun bins/cli/src/main.ts",
+    "cli": "bun apps/cli/src/main.ts",
     "build:cli": "bun tools/build-cli.ts",
-    "build:server": "bun build bins/server/src/main.ts --target=bun --minify --outfile=dist/server.js",
-    "policy:check": "nudge validate && bun tools/check-nudge-rules.ts && bun tools/check-skills-sync.ts && nudge check bins libs tools tests crates && bastion validate && eph check"
+    "build:server": "bun build apps/server/src/main.ts --target=bun --minify --outfile=dist/server.js",
+    "policy:check": "nudge validate && bun tools/check-nudge-rules.ts && bun tools/check-skills-sync.ts && nudge check apps libs tools tests crates && bastion validate && eph check"
   },
   "dependencies": {
     "@starter/db": "workspace:*",
