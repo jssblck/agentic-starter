@@ -34,7 +34,7 @@ Keep unsafe library interop in a named boundary file and make the resulting inte
 
 ### Bastion
 
-Bastion reviewers evaluate semantic questions that a syntax rule cannot answer: whether a decoder exists at the right boundary, whether a migration rollout is safe, whether OpenAPI behavior remains compatible, and whether a native cache key can reuse an incompatible artifact.
+Bastion reviewers evaluate semantic questions that a syntax rule cannot answer. The template ships two general gates, one for correctness and one for unnecessary complexity. A derived project should add narrow single-concern reviewers for its own invariants: whether a decoder exists at the right boundary, whether a migration rollout is safe, or whether a native cache key can reuse an incompatible artifact.
 
 ## Preferred modeling patterns
 
