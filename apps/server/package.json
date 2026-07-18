@@ -13,6 +13,7 @@
     "@starter/db": "workspace:*",
     "@starter/native": "workspace:*",
     "@starter/version": "workspace:*",
+    "elysia": "1.4.29",
     "incur": "0.4.17"
   }
 }
