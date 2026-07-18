@@ -50,6 +50,8 @@ bastion review --base main
 
 When a debugging incident yields a durable repository-specific lesson, record it with `nudge learn add` and include the problem, fix, and verification.
 
+When a changeset settles a design choice whose silent reversal a maintainer would object to, add a decision record in the same changeset using the `decision-records` skill; most changesets add none. Treat a choice with no decision record as incidental rather than intentional. Superseding or reversing a recorded decision requires explicit human approval: propose the change and stop.
+
 ## Customizing the starter
 
 Use the `customize-starter` skill. Do not begin with a repository-wide search-and-replace: package scopes, binary names, environment prefixes, release artifact names, and prose have different grammatical forms.
