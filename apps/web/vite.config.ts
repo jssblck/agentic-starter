@@ -25,6 +25,10 @@ export default defineConfig(() => {
       tailwindcss(),
     ],
     server: {
+      host: '127.0.0.1',
+      ...(process.env['PORT'] === undefined
+        ? {}
+        : { port: Number(process.env['PORT']), strictPort: true }),
       proxy: {
         '/api': { changeOrigin: true, target },
       },

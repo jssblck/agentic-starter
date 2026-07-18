@@ -5,6 +5,7 @@
     "": {
       "name": "@starter/agentic",
       "dependencies": {
+        "@starter/api": "workspace:*",
         "@starter/db": "workspace:*",
         "@starter/native": "workspace:*",
         "@starter/version": "workspace:*",

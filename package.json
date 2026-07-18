@@ -29,6 +29,7 @@
     "db:generate": "drizzle-kit generate --config libs/db/drizzle.config.ts",
     "db:migrate": "bun libs/db/src/migrate.ts",
     "db:migrations:check": "bun tools/check-migrations.ts",
+    "openapi:export": "bun tools/export-openapi.ts",
     "version:write": "bun tools/write-version.ts",
     "version:check": "bun tools/check-version.ts",
     "release:check": "bun tools/check-release.ts",
@@ -39,6 +40,7 @@
     "policy:check": "nudge validate && bun tools/check-nudge-rules.ts && bun tools/check-skills-sync.ts && nudge check apps libs tools tests crates && bastion validate && eph check"
   },
   "dependencies": {
+    "@starter/api": "workspace:*",
     "@starter/db": "workspace:*",
     "@starter/native": "workspace:*",
     "@starter/version": "workspace:*"

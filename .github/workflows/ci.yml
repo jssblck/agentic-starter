@@ -29,6 +29,8 @@ jobs:
       - run: bun run lint
       - run: bun run typecheck
       - run: bun run test
+      - run: bun run build:web
+      - run: bun run openapi:export
       - run: bun run version:check
       - run: bun run release:check
       - name: Reject edits to committed migrations

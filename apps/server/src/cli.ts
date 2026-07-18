@@ -1,8 +1,15 @@
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { createApp } from '@starter/api/server'
 import { createDatabase, createTodoRepository } from '@starter/db'
 import { createNativeTodoParser } from '@starter/native'
 import { VERSION } from '@starter/version'
+import { Elysia } from 'elysia'
 import { Cli, z } from 'incur'
+
+import { createWebRoutes } from './web.ts'
+
+const webDist = join(import.meta.dir, '..', '..', 'web', 'dist')
 
 const cli = Cli.create('todo-server', {
   version: VERSION,
@@ -23,7 +30,8 @@ const cli = Cli.create('todo-server', {
   async run({ env }) {
     const database = createDatabase(env.DATABASE_URL)
     const parser = createNativeTodoParser()
-    const app = createApp({ todos: createTodoRepository(database.db), parser })
+    const api = createApp({ todos: createTodoRepository(database.db), parser })
+    const app = existsSync(webDist) ? new Elysia().use(api).use(createWebRoutes(webDist)) : api
     const url = `http://${env.HOST}:${env.PORT}`
 
     app.listen({ hostname: env.HOST, port: env.PORT })

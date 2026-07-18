@@ -25,9 +25,16 @@ port=auto
 env.PORT=${todoctl.port}
 pre-start=bun run native:ensure
 
+[web]
+run=bun --cwd apps/web dev
+role=app
+port=auto
+env.PORT=${web.port}
+
 [env]
 APP_ENV=development
 LOG_LEVEL=debug
 DATABASE_URL=postgres://todo:todo@localhost:${postgres.port}/todo
 TODO_API_URL=http://localhost:${server.port}
 TODOCTL_URL=http://localhost:${todoctl.port}
+WEB_URL=http://localhost:${web.port}
