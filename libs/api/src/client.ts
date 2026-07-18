@@ -85,34 +85,34 @@ export class TodoApiClient implements TodoApi {
   }
 
   async health(): Promise<HealthDto> {
-    return requireData('health', await this.#client.health.get())
+    return requireData('health', await this.#client.api.health.get())
   }
 
   async version(): Promise<VersionDto> {
-    return requireData('version', await this.#client.version.get())
+    return requireData('version', await this.#client.api.version.get())
   }
 
   async list(status: TodoStatus = 'open', limit = 50): Promise<readonly TodoDto[]> {
     const data = requireData(
       'list todos',
-      await this.#client.v1.todos.get({ query: { status, limit } }),
+      await this.#client.api.v1.todos.get({ query: { status, limit } }),
     )
     return data.items
   }
 
   async create(input: string): Promise<TodoDto> {
-    return requireData('create todo', await this.#client.v1.todos.post({ input }))
+    return requireData('create todo', await this.#client.api.v1.todos.post({ input }))
   }
 
   async get(id: string): Promise<TodoDto> {
-    return requireData('get todo', await this.#client.v1.todos({ id }).get())
+    return requireData('get todo', await this.#client.api.v1.todos({ id }).get())
   }
 
   async update(id: string, patch: UpdateTodoBody): Promise<TodoDto> {
-    return requireData('update todo', await this.#client.v1.todos({ id }).patch(patch))
+    return requireData('update todo', await this.#client.api.v1.todos({ id }).patch(patch))
   }
 
   async delete(id: string): Promise<void> {
-    requireData('delete todo', await this.#client.v1.todos({ id }).delete())
+    requireData('delete todo', await this.#client.api.v1.todos({ id }).delete())
   }
 }

@@ -45,7 +45,7 @@ function errorMessage(error: unknown): string {
 }
 
 export function createApp(dependencies: AppDependencies) {
-  return new Elysia({ name: 'todo-server' })
+  return new Elysia({ name: 'todo-server', prefix: '/api' })
     .use(
       openapi({
         path: '/openapi',

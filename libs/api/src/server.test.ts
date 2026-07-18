@@ -25,10 +25,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 describe('todo API', () => {
+  test('serves the API and OpenAPI surface only under the API prefix', async () => {
+    const app = createApp({ todos: createMemoryTodoRepository(), parser })
+
+    expect((await app.handle(new Request('http://local.test/api/health'))).status).toBe(200)
+    expect((await app.handle(new Request('http://local.test/api/openapi'))).status).toBe(200)
+    expect((await app.handle(new Request('http://local.test/health'))).status).toBe(404)
+  })
+
   test('creates and lists a todo through real Elysia request handling', async () => {
     const app = createApp({ todos: createMemoryTodoRepository(), parser })
     const createResponse = await app.handle(
-      new Request('http://local.test/v1/todos', {
+      new Request('http://local.test/api/v1/todos', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ input: 'Write tests' }),
@@ -39,7 +47,7 @@ describe('todo API', () => {
     const createBody: unknown = JSON.parse(await createResponse.text())
     expect(isRecord(createBody) && createBody['title']).toBe('Write tests')
 
-    const listResponse = await app.handle(new Request('http://local.test/v1/todos?status=open'))
+    const listResponse = await app.handle(new Request('http://local.test/api/v1/todos?status=open'))
     expect(listResponse.status).toBe(200)
     const listBody: unknown = JSON.parse(await listResponse.text())
     expect(isRecord(listBody) && Array.isArray(listBody['items'])).toBe(true)
@@ -56,7 +64,7 @@ describe('todo API', () => {
     }
     const app = createApp({ todos: createMemoryTodoRepository(), parser: failingParser })
     const response = await app.handle(
-      new Request('http://local.test/v1/todos', {
+      new Request('http://local.test/api/v1/todos', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ input: 'broken' }),
