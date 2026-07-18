@@ -1,0 +1,4 @@
+# Hides committed generated outputs from ignore-aware scanners (nudge check,
+# ripgrep) without removing them from Git. oxlint and oxfmt carry the same
+# exclusions in their own ignorePatterns because they do not read this file.
+apps/web/src/routeTree.gen.ts
