@@ -22,8 +22,19 @@
     "unicorn/no-array-for-each": "off",
     "no-await-in-loop": "off"
   },
-  "ignorePatterns": ["dist/**", "target/**", "libs/native/artifacts/**"],
+  "ignorePatterns": [
+    "apps/web/src/routeTree.gen.ts",
+    "dist/**",
+    "target/**",
+    "libs/native/artifacts/**"
+  ],
   "overrides": [
+    {
+      "files": ["apps/web/src/main.tsx"],
+      "rules": {
+        "import/no-unassigned-import": "off"
+      }
+    },
     {
       "files": ["libs/native/src/load.ts"],
       "rules": {

@@ -1,0 +1,87 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: light dark;
+  --app-accent: oklch(47% 0.11 151deg);
+  --app-canvas: oklch(96% 0.01 151deg);
+  --app-error: oklch(51% 0.18 27deg);
+  --app-error-soft: oklch(94% 0.03 27deg);
+  --app-focus: oklch(55% 0.12 151deg);
+  --app-ink: oklch(24% 0.02 151deg);
+  --app-line: oklch(83% 0.02 151deg);
+  --app-muted: oklch(48% 0.03 151deg);
+  --app-on-accent: oklch(98% 0.01 151deg);
+  --app-soft: oklch(91% 0.02 151deg);
+  --app-surface: oklch(99% 0.005 151deg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --app-accent: oklch(76% 0.12 151deg);
+    --app-canvas: oklch(20% 0.02 151deg);
+    --app-error: oklch(76% 0.13 27deg);
+    --app-error-soft: oklch(27% 0.06 27deg);
+    --app-focus: oklch(76% 0.12 151deg);
+    --app-ink: oklch(94% 0.015 151deg);
+    --app-line: oklch(35% 0.03 151deg);
+    --app-muted: oklch(74% 0.025 151deg);
+    --app-on-accent: oklch(20% 0.03 151deg);
+    --app-soft: oklch(29% 0.025 151deg);
+    --app-surface: oklch(24% 0.02 151deg);
+  }
+}
+
+@theme inline {
+  --color-accent: var(--app-accent);
+  --color-canvas: var(--app-canvas);
+  --color-error: var(--app-error);
+  --color-error-soft: var(--app-error-soft);
+  --color-focus: var(--app-focus);
+  --color-ink: var(--app-ink);
+  --color-line: var(--app-line);
+  --color-muted: var(--app-muted);
+  --color-on-accent: var(--app-on-accent);
+  --color-soft: var(--app-soft);
+  --color-surface: var(--app-surface);
+  --font-sans: Aptos, 'Segoe UI Variable', 'Segoe UI', sans-serif;
+  --radius-control: 0.75rem;
+  --radius-panel: 1rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 20rem;
+  background: var(--app-canvas);
+  font-family: var(--font-sans);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.checkbox-indicator::after {
+  display: block;
+  width: 0.38rem;
+  height: 0.68rem;
+  margin: -0.1rem auto 0;
+  border-right: 0.13rem solid currentcolor;
+  border-bottom: 0.13rem solid currentcolor;
+  content: '';
+  transform: rotate(45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

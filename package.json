@@ -13,7 +13,8 @@
     "doctor": "bun tools/doctor.ts",
     "dev": "eph dev",
     "dev:server": "bun --hot apps/server/src/main.ts",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dev:web": "bun --cwd apps/web dev",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p apps/web/tsconfig.json",
     "lint": "oxlint --type-aware --deny-warnings .",
     "fmt": "oxfmt .",
     "fmt:check": "oxfmt --check .",
@@ -34,6 +35,7 @@
     "cli": "bun apps/cli/src/main.ts",
     "build:cli": "bun tools/build-cli.ts",
     "build:server": "bun build apps/server/src/main.ts --target=bun --minify --outfile=dist/server.js",
+    "build:web": "bun --cwd apps/web build",
     "policy:check": "nudge validate && bun tools/check-nudge-rules.ts && bun tools/check-skills-sync.ts && nudge check apps libs tools tests crates && bastion validate && eph check"
   },
   "dependencies": {
