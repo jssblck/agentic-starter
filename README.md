@@ -40,6 +40,7 @@ Bun, TypeScript, the root `bun run check` command, and the agent policy layer ar
 - Rust and native code
 - PostgreSQL persistence
 - HTTP API
+- React web UI
 - CLI distribution
 - containers and releases
 - shared build identity
@@ -94,6 +95,7 @@ Example-capability documentation, removed or rewritten together with its capabil
 - [Getting started](docs/getting-started.md) installs the toolchain and runs the full example stack.
 - [Database and migrations](docs/database.md) covers the PostgreSQL persistence capability.
 - [HTTP API](docs/http-api.md) covers the Elysia and Eden contract.
+- [Web UI](docs/web-ui.md) covers the React app, its state rules, and its testing pattern.
 - [Versioning and releases](docs/versioning-and-releases.md) covers the release pipeline.
 
 Decision records in `docs/decisions` preserve narrower choices that a derived project may need to replace.

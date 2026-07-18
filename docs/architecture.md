@@ -13,6 +13,8 @@ apps/cli -------> libs/api (Eden client) -------> HTTP API
    |
    +-----------> libs/native -------> todo-parser-napi -------> todo-parser
 
+apps/web -------> libs/api (Eden client) -------> HTTP API
+
 apps/server ----> libs/api (Elysia factory)
    |
    +-----------> libs/db ----------> PostgreSQL
@@ -34,10 +36,13 @@ Rules:
 6. `libs/db` owns Drizzle and raw database access. Applications depend on `TodoRepository`.
 7. `libs/version` supplies one build identity to every TypeScript surface; Rust receives the same identity through its build script.
 8. `libs/domain` owns the shared domain types and their type guards. Every application package may depend on it; it depends only on `libs/version`.
+9. `apps/web` reaches the server only through the shared Eden client over HTTP. The server serves its compiled assets in production and never imports from it.
 
 ## HTTP and native boundaries
 
 The CLI and server share an inferred Elysia contract at build time, but the compiled CLI still crosses a real HTTP boundary through Eden Treaty. Runtime OpenAPI remains available for people and tools that need to inspect a running server.
+
+The API is mounted under `/api` so the server can serve the compiled web app same-origin without route collisions. Unknown non-API paths fall back to the SPA's `index.html`; missing API routes return 404 instead of HTML.
 
 The client CLI also retains Incur's Fetch surface for agents and HTTP consumers. `todoctl serve` starts it explicitly on an assigned port. The executable entry module does not default-export the Incur object because Bun treats any entrypoint default export with a `fetch` handler as a server and starts it automatically. `todo-server` exposes only the Elysia HTTP application.
 
@@ -49,6 +54,7 @@ The Node-API addon is a same-process optimization boundary. It is suitable for p
 - Native decoder tests prove TypeScript rejects malformed addon output without compiling Rust.
 - Elysia application tests inject an in-memory repository and parser.
 - Eden client tests exercise the real Elysia handler through a fetch boundary.
+- Web component tests render React against that same real handler and in-memory repository under happy-dom.
 - Database integration tests exercise Drizzle against Postgres.
 - CI's smoke test runs the built native addon, server, database, Eden client, and CLI together.
 

@@ -81,6 +81,23 @@ rules:
           - kind: Regex
             pattern: "\\bas\\s+unknown\\s+as\\b"
 
+  - name: react-no-manual-memoization
+    description: The React Compiler owns memoization
+    message: 'Delete the manual memoization; the React Compiler memoizes components and values automatically.'
+    on:
+      - hook: PreToolUse
+        tool: Write
+        file: '**/*.tsx'
+        content:
+          - kind: Regex
+            pattern: "\\b(?:useMemo|useCallback|memo)\\s*\\("
+      - hook: PreToolUse
+        tool: Edit
+        file: '**/*.tsx'
+        new_content:
+          - kind: Regex
+            pattern: "\\b(?:useMemo|useCallback|memo)\\s*\\("
+
   - name: rust-no-unwrap
     description: Preserve error context at the native boundary
     message: 'Handle the error or use `.expect("specific invariant")` with useful context, then retry.'

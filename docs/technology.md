@@ -60,6 +60,16 @@ The remaining decisions are smaller instances of the same question: where should
 
 Elysia fits the Bun runtime and defines routes and runtime schemas in one place. The CLI talks to the server through Eden Treaty using the server's exported `App` type, so a change to a route, body, response, status, or parameter reaches every caller at typecheck speed. That source-level contract is appropriate exactly as long as the client and server are versioned together in one TypeScript monorepo; the compiled CLI still speaks HTTP and contains no server code, and OpenAPI remains a runtime documentation surface rather than a committed client-generation pipeline. A project that versions client and server independently, or adds a non-TypeScript consumer, should replace this with a language-neutral contract and an explicit compatibility policy.
 
+### React on the same contract
+
+Most derived projects grow a UI, so the template ships one as an example capability. The web app consumes the server's `App` type through the same shared client the CLI uses, which means the Eden contract extends into the browser for free: a route or schema change reaches React components at typecheck speed, with no client generation step. The OpenAPI document still serves external consumers; a release derives it from the running app and attaches the spec plus a rendered Scalar reference page.
+
+Routing is TanStack Router in file-based mode. Typed routes, params, and search parameters apply the compiler-first philosophy to navigation, and each new page is a new file plus a regenerated route tree, so parallel agents add pages without colliding in a shared registry. TanStack Query owns server state, React 19 actions (`useActionState` with `useOptimistic`) own form and mutation state, `useState` is a last resort, and the React Compiler owns memoization, with manual `useMemo` and `useCallback` blocked by a Nudge rule.
+
+Styling is Tailwind v4 with tokens in CSS, chosen for agent fluency and because co-located utility classes remove the shared stylesheets that parallel agents conflict in. Headless primitives come from Base UI as an ordinary library dependency: it is the actively developed successor to Radix from the same lineage, and Radix's larger training-data footprint is a wasting advantage.
+
+In development Vite owns the browser connection with hot module replacement and proxies `/api` to the eph-assigned server, while the API hot-reloads separately under `bun --hot`. In production the server serves the built assets same-origin, so the compiled artifact stays one process and the browser needs no configured API URL. Component tests render against the real Elysia handler backed by the in-memory repository across Eden's fetch boundary: no browser, no network, no mocks, and `bun test` stays the single test runner.
+
 ### Incur
 
 Incur defines CLI commands, options, environment variables, help, version handling, and structured agent-facing output from schemas. Executable packages stay thin: parse process inputs, construct dependencies, invoke libraries, render results. Application workflows remain dependency-injected, so they are testable at Bun test speed without spawning a process.

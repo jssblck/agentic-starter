@@ -1,0 +1,4 @@
+export function TotalLabel({ items }: { readonly items: readonly number[] }) {
+  const total = items.reduce((sum, item) => sum + item, 0)
+  return <span>{total}</span>
+}

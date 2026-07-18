@@ -18,7 +18,8 @@ Review every changed release asset name, environment variable, package import, r
 4. Change the Drizzle schema and create a new migration.
 5. Change the Elysia schemas and Eden client facade in `libs/api`.
 6. Update CLI commands.
-7. Remove todo-specific tests and docs only after replacements exist.
+7. Update the web routes and feature components.
+8. Remove todo-specific tests and docs only after replacements exist.
 
 This order keeps a compiling vertical slice and makes interface mismatches visible close to their source.
 
@@ -30,7 +31,8 @@ Delete an unused capability instead of leaving disabled scripts, placeholder pac
 | ----------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Rust and native parsing | `crates`, `libs/native`, the Cargo files, `rust-toolchain.toml`, and `tools/native-cache.ts`         | Replace imports in the server and CLI. Remove native scripts and dependencies, Rust and native CI work, Docker's native builder, version build scripts, and native docs.                                      |
 | PostgreSQL persistence  | `libs/db`, `tools/check-migrations.ts`, and `tests/integration/database.test.ts`                     | Replace the server repository. Remove Drizzle dependencies and scripts, the Postgres eph role and environment, migration startup, the CI database service and migration check, and `docs/database.md`.        |
-| HTTP API                | `apps/server` and `libs/api`                                                                         | Replace remote CLI commands or remove the CLI. Remove Elysia and Eden dependencies, server container paths, and `docs/http-api.md`.                                                                           |
+| Web UI                  | `apps/web`, `apps/server/src/web.ts` and its test, and the `.eph` web service                        | Remove `dev:web`, `build:web`, the web typecheck project, Docker's web-builder stage and dist copy, the CI web build step, `WEB_URL`, the React Nudge rule and fixtures, and `docs/web-ui.md`.                |
+| HTTP API                | `apps/server`, `libs/api`, and `tools/export-openapi.ts`                                             | Remove the Web UI first. Replace remote CLI commands or remove the CLI. Remove Elysia and Eden dependencies, `openapi:export` and its CI and release steps, server container paths, and `docs/http-api.md`.   |
 | CLI distribution        | `apps/cli`, `tools/build-cli.ts`, and `tools/release-targets.ts`                                     | Remove CLI scripts and dependencies, binary release jobs, installer scripts, release assets, CLI smoke tests, `tools/check-release.ts`, and CLI sections in the release docs.                                 |
 | Containers and releases | `Dockerfile`, `scripts/docker-entrypoint.sh`, installer scripts, and `.github/workflows/release.yml` | Remove release scripts and dependencies, `release:check`, version rewriting if no other consumer needs it, and `docs/versioning-and-releases.md`. Keep any deployment path the derived project actually uses. |
 | Shared build identity   | `libs/version`, `tools/write-version.ts`, and `tools/check-version.ts`                               | Remove version imports, API version endpoints, Rust build-script integration, release rewrites, and `version:check`. Remove this after native and release consumers are gone.                                 |

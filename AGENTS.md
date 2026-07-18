@@ -16,6 +16,7 @@ This repository is optimized for several coding agents working in separate Git w
 - Native boundary: run both Rust checks and `bun run native:ensure`, then the native package tests.
 - API contract: update the Elysia schemas in `libs/api`, then run the API tests and TypeScript checks so Eden callers are checked against the new route type.
 - Database schema: edit `libs/db/src/schema.ts`, run `bun run db:generate`, inspect the SQL, and add migration tests. Never edit a migration that may already have shipped.
+- Web UI: run the web tests and `bun run typecheck`. Run `bun run build:web` when routes, configuration, or dependencies change.
 - Release/tooling: run `bun run version:check` and `bun run release:check`.
 
 Run the full `bun run check` when the changeset is coherent, not after every small edit.
@@ -31,6 +32,14 @@ Run the full `bun run check` when the changeset is coherent, not after every sma
 - Keep raw SQL and Drizzle access inside `libs/db`.
 - Keep direct `.node` loading inside `libs/native/src/load.ts`; the rest of the code depends on `TodoParser`.
 - Generated files are outputs. Change their source and regenerate them.
+
+## Web UI invariants
+
+- Server state lives in TanStack Query through the shared API client. Components never fetch in effects.
+- Reach for `useState` last: shareable state belongs in typed URL search params, form and mutation state in `useActionState` with `useOptimistic`, and cross-cutting dependencies in router context and providers rather than prop drilling.
+- The React Compiler owns memoization. Do not use `useMemo`, `useCallback`, or `memo`.
+- Every route defines or inherits `errorComponent` and `pendingComponent`; failures render boundaries, not blank screens.
+- Component tests render against the real Elysia app over Eden's fetch boundary with the in-memory repository. Do not mock HTTP.
 
 ## Rust invariants
 

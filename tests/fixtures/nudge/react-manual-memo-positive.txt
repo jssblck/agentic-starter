@@ -1,0 +1,6 @@
+import { useMemo } from 'react'
+
+export function TotalLabel({ items }: { readonly items: readonly number[] }) {
+  const total = useMemo(() => items.reduce((sum, item) => sum + item, 0), [items])
+  return <span>{total}</span>
+}

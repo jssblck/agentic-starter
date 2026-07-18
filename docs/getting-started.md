@@ -49,8 +49,10 @@ Useful commands:
 ```sh
 bun run cli -- list
 bun run cli -- add "Read architecture docs @office #onboarding"
-curl "$TODO_API_URL/health"
+curl "$TODO_API_URL/api/health"
 ```
+
+The web app runs with hot reload at `$WEB_URL`, proxying `/api` to this worktree's server.
 
 ## Install hooks and agent skills
 
