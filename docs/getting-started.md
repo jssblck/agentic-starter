@@ -1,4 +1,6 @@
-# Getting started
+# Getting started with the example stack
+
+This document installs the toolchain and runs the example todo application end to end. The application is disposable demonstration code: if you are starting a real project, begin with the [README](../README.md) and the [customization guide](customizing.md), then use this page to verify the toolchain and whichever example capabilities you keep.
 
 ## Install tools
 

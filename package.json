@@ -1,5 +1,5 @@
 {
-  "name": "@starter/worktree-todo",
+  "name": "@starter/agentic",
   "version": "0.0.0",
   "private": true,
   "description": "A Bun, TypeScript, Rust, Elysia, Drizzle, and Postgres monorepo starter designed for parallel coding-agent worktrees.",

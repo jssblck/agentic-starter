@@ -51,7 +51,7 @@ export function createApp(dependencies: AppDependencies) {
         path: '/openapi',
         documentation: {
           info: {
-            title: 'Worktree Todo API',
+            title: 'Todo API',
             version: VERSION,
             description:
               'An intentionally over-engineered todo API demonstrating Bun, Elysia, Drizzle, Postgres, and a Rust parser.',

@@ -20,6 +20,8 @@ bins/server ----> libs/api (Elysia factory)
    +-----------> libs/version
 ```
 
+The diagram shows the example instance of the permanent shape. The rules below are the permanent invariants; the todo package names that express them belong to the example and are renamed or deleted with their capabilities.
+
 Rules:
 
 1. `todo-parser` is pure Rust. It has no Bun, Node-API, HTTP, or database concerns.

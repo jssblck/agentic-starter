@@ -64,9 +64,9 @@ export interface TodoCliDependencies {
 export function createTodoCli(dependencies: TodoCliDependencies) {
   const cli = Cli.create('todoctl', {
     version: VERSION,
-    description: 'Manage todos through the Worktree Todo API.',
+    description: 'Manage todos through the todo HTTP API.',
     mcp: {
-      instructions: 'Parse and manage todos through the configured Worktree Todo API.',
+      instructions: 'Parse and manage todos through the configured todo HTTP API.',
     },
     sync: {
       suggestions: ['list my open todos', 'add a todo', 'complete a todo'],

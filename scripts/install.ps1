@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$Repository = if ($env:TODOCTL_REPO) { $env:TODOCTL_REPO } else { "your-org/worktree-todo-starter" }
+$Repository = if ($env:TODOCTL_REPO) { $env:TODOCTL_REPO } else { "your-org/agentic-starter" }
 $Version = if ($env:TODOCTL_VERSION) { $env:TODOCTL_VERSION } else { "" }
 $BinDir = if ($env:TODOCTL_BIN_DIR) { $env:TODOCTL_BIN_DIR } else { Join-Path $env:LOCALAPPDATA "Programs\todoctl" }
 

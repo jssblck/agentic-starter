@@ -18,7 +18,7 @@ export async function runMigrations(databaseUrl: string): Promise<void> {
   const migrationsDirectory = join(import.meta.dir, '..', 'drizzle')
 
   try {
-    await sql`select pg_advisory_lock(hashtext('worktree-todo-starter:migrations'))`
+    await sql`select pg_advisory_lock(hashtext('agentic-starter:migrations'))`
     await sql`
       create table if not exists starter_migrations (
         name text primary key,
@@ -63,7 +63,7 @@ export async function runMigrations(databaseUrl: string): Promise<void> {
     }
   } finally {
     try {
-      await sql`select pg_advisory_unlock(hashtext('worktree-todo-starter:migrations'))`
+      await sql`select pg_advisory_unlock(hashtext('agentic-starter:migrations'))`
     } finally {
       await sql.end({ timeout: 5 })
     }

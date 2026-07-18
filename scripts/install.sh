@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-REPO="${TODOCTL_REPO:-your-org/worktree-todo-starter}"
+REPO="${TODOCTL_REPO:-your-org/agentic-starter}"
 VERSION="${TODOCTL_VERSION:-}"
 BIN_DIR="${TODOCTL_BIN_DIR:-$HOME/.local/bin}"
 TMP_DIR="${TODOCTL_TMP_DIR:-${TMPDIR:-/tmp}}"

@@ -1,6 +1,6 @@
 ---
 name: customize-starter
-description: Rename and reshape the Worktree Todo Starter without breaking package, API, native, database, worktree, or release contracts.
+description: Rename and reshape the Agentic Starter without breaking package, API, native, database, worktree, or release contracts.
 ---
 
 # Customize the starter

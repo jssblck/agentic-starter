@@ -1,222 +1,100 @@
-# Worktree Todo Starter
+# Agentic Starter
 
-A deliberately overbuilt todo application used as a template for a small team running several coding agents in parallel Git worktrees.
+This repository is a template for starting software projects that several coding agents will develop in parallel Git worktrees. Its job is to give a new project a fast, strict Bun and TypeScript foundation, an isolated development environment, and an agent policy layer from the first commit.
 
-The repository combines:
+The todo application is disposable example code. Rust, PostgreSQL, the HTTP server, the CLI, native bindings, and the release pipeline are present to demonstrate complete capability units that can be renamed, replaced, or deleted. Do not preserve them unless the new project needs them.
 
-- Bun workspaces for thin server and CLI executables plus dependency-injected API, database, native, domain, and version libraries.
-- Incur for schema-based command, option, environment, help, version, and agent-facing output handling in both executables.
-- TypeScript 7 with strict compiler options, type-aware Oxlint, Oxfmt, and deterministic Nudge rules that reject common type-system escape hatches.
-- Elysia for the HTTP server and OpenAPI document.
-- Drizzle ORM with PostgreSQL and checked-in SQL migrations.
-- A pure Rust parser wrapped by a thin napi-rs package and consumed by both the CLI and server.
-- eph for collision-free services and ports in every Git worktree.
-- Bastion for narrow semantic reviewers that cover contracts, migrations, native boundaries, worktree isolation, and releases.
-- GitHub Actions for CI, tagged CLI binaries, checksums, installers, a multi-architecture GHCR image, SBOMs, and build provenance.
+## Start a new project
 
-The example syntax is intentionally simple:
-
-```text
-Buy oat milk @home #errands !high due:2026-08-01
-```
-
-The Rust library turns that into a typed value. The CLI can inspect it locally or send the original input to the server. The server parses it again at the trust boundary and persists it in Postgres.
-
-## Repository shape
-
-```text
-bins/
-  cli/                    standalone Bun CLI
-  server/                 server configuration, wiring, and process lifecycle
-libs/
-  api/                    Elysia app factory and Eden Treaty client
-  db/                     Drizzle schema, repository, migrations
-  domain/                 stable TypeScript domain types
-  native/                 only package allowed to load the .node addon
-  version/                Git-tag-derived build identity
-crates/
-  todo-parser/            pure Rust parser and tests
-  todo-parser-napi/       thin Node-API adapter
-tools/                    versioning, native cache, policy checks
-scripts/                  installers and container entrypoint
-```
-
-Read `docs/architecture.md` for the dependency boundaries and why they exist.
-
-## Quick start
-
-Prerequisites are Bun 1.3.14, Rust 1.97.1, Docker, Git, and eph. Nudge and Bastion are required for the complete policy loop and optional for simply running the example.
+Create a new repository from this template, clone it, and install the locked dependencies:
 
 ```sh
 bun install --frozen-lockfile
 bun run doctor
-bun run native:ensure
-eph dev
 ```
 
-`eph dev` starts an isolated Postgres container, chooses a free server port, runs migrations, and foregrounds the Elysia server. In another shell:
+Then ask a coding agent to use the checked-in `customize-starter` skill. Give it the new project's identity and the capabilities you intend to keep:
 
-```sh
-eval "$(eph env)"
+```text
+Use the customize-starter skill to turn this template into my new project.
 
-bun run cli -- add "Buy oat milk @home #errands !high due:2026-08-01"
-bun run cli -- list
-bun run cli -- parse "Write release notes @office #release !urgent" --json
+Display name: <human-readable product name>
+Repository: <owner/repository>
+Repository URL: <canonical Git URL>
+Package scope: <npm package scope>
+CLI name: <command name, or remove the CLI>
+Server name: <service name, or remove the server>
+Environment prefix: <uppercase prefix>
+Description: <one-sentence project description>
+
+Keep: <capability units the project needs>
+Remove: <capability units the project does not need>
 ```
 
-The OpenAPI UI is at `${TODO_API_URL}/openapi`; the raw document is at `${TODO_API_URL}/openapi/json`.
+The skill traces each identity through its actual consumers. Package scopes, binary names, environment variables, artifact names, container paths, cache namespaces, URLs, and prose have different grammatical forms, so a repository-wide search and replace is not a safe customization method.
 
-The Bun and Cargo lockfiles are checked in. CI and release builds use both in locked mode:
+## Choose the starting shape
+
+Bun, TypeScript, the root `bun run check` command, and the agent policy layer are the permanent base. Everything else is an example capability:
+
+- Rust and native code
+- PostgreSQL persistence
+- HTTP API
+- CLI distribution
+- containers and releases
+- shared build identity
+- worktree-local services
+
+Keep only what the destination project needs. Delete an unused capability as a complete unit, including its code, tests, workflows, configuration, reviewers, dependencies, and documentation. [The customization guide](docs/customizing.md) maps each capability to the files and shared hubs that must change together.
+
+If the project keeps the example stack temporarily, replace the todo vertical slice in the order documented by the customization guide. This keeps the repository compiling while domain types, native boundaries, persistence, API routes, and commands change together.
+
+## Review the project-specific decisions
+
+The agent can update names and code, but it cannot infer ownership or publishing policy. Before treating the result as the new project's baseline, review:
+
+- `.github/CODEOWNERS` and repository ownership
+- Bastion authentication and branch protection
+- license, security contacts, and package visibility
+- container registry and deployment permissions
+- installer defaults and release artifact names
+
+Do not publish the first tag until installer URLs, image permissions, and native release targets have been verified in the destination repository.
+
+## Prove the clean baseline
+
+After customization, update and verify the dependency graph:
 
 ```sh
+bun install
 bun install --frozen-lockfile
-cargo check --workspace --locked
 ```
 
-## Fast checks by change class
-
-The repository does not make TypeScript-only work pay for Rust compilation.
+Run `cargo check --workspace --locked` if Rust remains. Run `bun run native:ensure` only if the native boundary remains and needs an integration test or executable. Then run the repository gates:
 
 ```sh
-# High-churn product code
-bun run fmt:check
-bun run lint
-bun run typecheck
-bun run test
-
-# Pure Rust parser work
-cargo check --locked -p todo-parser
-cargo test --locked -p todo-parser
-
-# Native boundary work
-bun run native:ensure
-bun test libs/native
-
-# Full merge gate
 bun run check
-```
-
-`tools/native-cache.ts` hashes Rust source, Cargo metadata, toolchain, build profile, target triple, and resolved version. Compatible worktrees hard-link or copy the completed `.node` artifact from a content-addressed user cache. Cargo's mutable `target` state remains isolated.
-
-## TypeScript guardrails
-
-The compiler is configured with strict nullability, unchecked-index protection, exact optional properties, unknown catch variables, exhaustive returns, and several other high-signal checks.
-
-Oxlint adds type-aware unsafe-operation rules. Nudge blocks deterministic escapes before an agent writes them and repeats those checks in CI:
-
-- explicit `any` annotations;
-- non-null assertions;
-- `@ts-ignore`, `@ts-nocheck`, and `@ts-expect-error`;
-- `as unknown as` laundering;
-- Rust `unwrap()` at the native boundary.
-
-External values are decoded at the edge. `libs/native/src/decode.ts` is the worked example: the addon returns JSON, TypeScript receives `unknown`, and a decoder proves every field before creating a `ParsedTodo`.
-
-See `docs/type-safety.md`.
-
-## Eden as the server-to-CLI type link
-
-`libs/api` exports the complete Elysia `App` type. Its `TodoApiClient` passes that type to Eden Treaty, so the compiler checks every CLI route, parameter, body, status, and response without a generated contract file.
-
-The type-only link disappears from the compiled CLI, which still communicates with the server over HTTP. Elysia continues to expose runtime OpenAPI documentation for interactive inspection and external tooling.
-
-See `docs/http-api.md`.
-
-## Worktrees and eph
-
-Create one full-repository Git worktree per agent. Do not create separate TypeScript and Rust worktrees for one changeset; cross-boundary edits should remain one atomic commit.
-
-```sh
-git worktree add ../worktrees/agent-42 -b agent/42 main
-cd ../worktrees/agent-42
-bun install --frozen-lockfile
-eph dev
-```
-
-The `.eph` file gives every checkout its own Postgres container, volume, and assigned server port. `bunfig.toml` keeps each checkout's dependency graph local while reusing Bun's global package store.
-
-See `docs/worktrees.md`.
-
-## Agent policy
-
-`AGENTS.md` is the authoritative workflow. The repository also contains a `customize-starter` skill for Codex-compatible agents and Claude Code.
-
-Set up the tool-specific skills and hooks after cloning:
-
-```sh
-nudge codex setup
-nudge claude setup
-bastion skills install
-eph skills install
-```
-
-Local semantic review:
-
-```sh
-bastion validate
 bastion review --base main
 ```
 
-The included Bastion GitHub workflow is opt-in. Set repository variable `BASTION_ENABLED=true`, configure `CODEX_AUTH_JSON` or replace the sample authentication step with a per-author mapping, and then make the aggregate `bastion` check required.
+Finally, search for the old display name, repository slug, package scope, binary names, environment prefix, URLs, and names owned by deleted capabilities. A customized repository should describe only the destination project; this starter's identity and example domain should be gone.
 
-## Versioning
+## Reference documents
 
-Every workspace package, Rust crate, CLI, server, and native addon resolves one version.
+Permanent base, kept by every derived project:
 
-- On an exact tag such as `v0.1.0`, runtime version is `0.1.0`.
-- On an untagged source checkout, runtime version is `0.0.0+g<commit>` with `.dirty` when applicable.
-- Release jobs pass `PROJECT_VERSION`, rewrite package and Cargo metadata, and compile the same value into TypeScript and Rust.
-- The native loader refuses to start when the addon version and TypeScript version differ.
+- [Customizing the starter](docs/customizing.md) is the authoritative capability and verification guide.
+- [Technology choices](docs/technology.md) explains why the template uses its current stack and which assumptions should trigger a different choice.
+- [Architecture](docs/architecture.md) defines the permanent base and dependency boundaries.
+- [Agent workflow](docs/agent-workflow.md) explains the development and review loop inherited by the new project.
+- [Worktrees](docs/worktrees.md) covers per-agent isolation of checkouts, services, and build state.
+- [Type safety](docs/type-safety.md) explains the layered checks and preferred modeling patterns.
 
-```sh
-bun run version:write -- --version 0.1.0
-bun run version:check
-```
+Example-capability documentation, removed or rewritten together with its capability:
 
-Release metadata is generated during the workflow and is not intended to be committed from an ordinary development branch.
+- [Getting started](docs/getting-started.md) installs the toolchain and runs the full example stack.
+- [Database and migrations](docs/database.md) covers the PostgreSQL persistence capability.
+- [HTTP API](docs/http-api.md) covers the Elysia and Eden contract.
+- [Versioning and releases](docs/versioning-and-releases.md) covers the release pipeline.
 
-## Releases
-
-Pushing `vX.Y.Z` runs `.github/workflows/release.yml` and creates:
-
-- Linux x64 and arm64 CLI archives;
-- macOS Intel and Apple Silicon CLI archives;
-- a Windows x64 CLI archive;
-- `checksums.txt` covering every archive;
-- a GitHub release containing the archives, checksums, and both installer scripts;
-- a multi-architecture server image in `ghcr.io/<owner>/<repo>`;
-- provenance and SBOM metadata for the image.
-
-Installer entry points:
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/your-org/worktree-todo-starter/main/scripts/install.sh | sh
-```
-
-```powershell
-irm https://raw.githubusercontent.com/your-org/worktree-todo-starter/main/scripts/install.ps1 | iex
-```
-
-The installers detect the platform, select the matching release archive, and verify its SHA-256 checksum before installation.
-
-See `docs/versioning-and-releases.md`.
-
-## Customizing the template
-
-Use the checked-in `customize-starter` skill before replacing the todo domain. Give the agent the target display name, repository name and URL, package scope, CLI and server names, environment prefix, and description. The skill keeps those grammatical roles separate and traces each change through manifests, locks, releases, installers, services, and docs.
-
-Review the diff, update `.github/CODEOWNERS`, run `bun install` to update the lockfile, and prove the result with `bun install --frozen-lockfile`. Then remove or reshape the example in coherent capability units. Bun and TypeScript remain the permanent base; `docs/customizing.md` maps every removable subsystem to its consumers and checks.
-
-See `docs/customizing.md`.
-
-## Upstream tools
-
-- Bun: https://bun.sh/
-- TypeScript: https://www.typescriptlang.org/
-- Elysia: https://elysiajs.com/
-- Drizzle: https://orm.drizzle.team/
-- napi-rs: https://napi.rs/
-- Oxlint and Oxfmt: https://oxc.rs/
-- Nudge: https://github.com/attunehq/nudge
-- Bastion: https://github.com/jssblck/bastion
-- eph: https://github.com/attunehq/doteph
+Decision records in `docs/decisions` preserve narrower choices that a derived project may need to replace.

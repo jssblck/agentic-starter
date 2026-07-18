@@ -6,7 +6,7 @@ import { Cli, z } from 'incur'
 
 const cli = Cli.create('todo-server', {
   version: VERSION,
-  description: 'Run the Worktree Todo HTTP API.',
+  description: 'Run the todo HTTP API.',
   env: z.object({
     DATABASE_URL: z.string().min(1).describe('Postgres connection URL'),
     HOST: z.string().default('0.0.0.0').describe('HTTP listen host'),

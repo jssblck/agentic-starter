@@ -49,12 +49,12 @@ function hostTarget(): string {
 
 function cacheRoot(): string {
   const explicit = process.env['XDG_CACHE_HOME']
-  if (explicit !== undefined) return join(explicit, 'worktree-todo-starter', 'native')
+  if (explicit !== undefined) return join(explicit, 'agentic-starter', 'native')
   const localAppData = process.env['LOCALAPPDATA']
   if (process.platform === 'win32' && localAppData !== undefined) {
-    return join(localAppData, 'worktree-todo-starter', 'native')
+    return join(localAppData, 'agentic-starter', 'native')
   }
-  return join(homedir(), '.cache', 'worktree-todo-starter', 'native')
+  return join(homedir(), '.cache', 'agentic-starter', 'native')
 }
 
 async function sourceFiles(): Promise<readonly string[]> {
