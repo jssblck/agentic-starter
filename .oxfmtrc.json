@@ -12,6 +12,8 @@
     "target/**",
     "libs/native/artifacts/**",
     ".agents/skills/using-bastion/**",
-    ".claude/skills/using-bastion/**"
+    ".claude/skills/using-bastion/**",
+    ".agents/skills/emulate/**",
+    ".claude/skills/emulate/**"
   ]
 }
