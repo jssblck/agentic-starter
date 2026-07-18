@@ -11,7 +11,7 @@
   "scripts": {
     "bootstrap": "bun install --frozen-lockfile && bun run native:ensure",
     "doctor": "bun tools/doctor.ts",
-    "dev": "eph dev",
+    "dev": "eph up",
     "dev:server": "bun --hot apps/server/src/main.ts",
     "dev:web": "bun --cwd apps/web dev",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p apps/web/tsconfig.json",

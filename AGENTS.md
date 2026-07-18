@@ -6,7 +6,7 @@ This repository is optimized for several coding agents working in separate Git w
 
 1. Read `docs/architecture.md` and the nearest domain document before editing.
 2. Run `bun run doctor` to see which local tools are available.
-3. Run `eph dev` only when the task needs the local service stack. Every worktree gets isolated Postgres data and ports.
+3. Run `eph up` only when the task needs the local service stack. Every worktree gets isolated Postgres data and ports.
 4. Run `bun run native:ensure` only when a real native integration test or executable needs the Rust addon.
 
 ## Classify the change before running checks

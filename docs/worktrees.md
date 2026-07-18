@@ -23,7 +23,7 @@ Never share one mutable `node_modules` directory by symlink. The package graph a
 ```sh
 eph up --role dep   # prewarm Postgres
 
-eph dev             # adopt Postgres, migrate, foreground server
+eph up              # adopt Postgres, migrate, start server, CLI, and web
 
 eph down            # stop what this session started
 

@@ -4,7 +4,7 @@
 
 ## Development
 
-`eph dev` starts the Vite dev server alongside the API; open `$WEB_URL` after `eval "$(eph env)"`. Vite proxies `/api` to the eph-assigned server port and hot-reloads the UI, while the API reloads separately under `bun --hot`. In production the server serves `apps/web/dist` same-origin with an `index.html` fallback for client routes.
+`eph up` starts the Vite dev server alongside the API; open `$WEB_URL` after `eval "$(eph env)"`. Vite proxies `/api` to the eph-assigned server port and hot-reloads the UI, while the API reloads separately under `bun --hot`. In production the server serves `apps/web/dist` same-origin with an `index.html` fallback for client routes.
 
 ## State and structure
 

@@ -33,7 +33,7 @@ bun run native:ensure
 ## Start a worktree-local stack
 
 ```sh
-eph dev
+eph up
 ```
 
 The `.eph` roles make Postgres a dependency tier and the Elysia server an application tier. Postgres reaches healthy state first. The server's `pre-start` hooks materialize the native addon and run migrations. The application receives an assigned `PORT` and a matching `DATABASE_URL`.
