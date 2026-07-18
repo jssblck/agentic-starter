@@ -45,7 +45,7 @@ Bun, TypeScript, the root `bun run check` command, and the agent policy layer ar
 - shared build identity
 - worktree-local services
 
-Keep only what the destination project needs. Delete an unused capability as a complete unit, including its code, tests, workflows, configuration, reviewers, dependencies, and documentation. [The customization guide](docs/customizing.md) maps each capability to the files and shared hubs that must change together.
+Keep only what the derived project needs. Delete an unused capability as a complete unit, including its code, tests, workflows, configuration, reviewers, dependencies, and documentation. [The customization guide](docs/customizing.md) maps each capability to the files and shared hubs that must change together.
 
 If the project keeps the example stack temporarily, replace the todo vertical slice in the order documented by the customization guide. This keeps the repository compiling while domain types, native boundaries, persistence, API routes, and commands change together.
 
@@ -59,7 +59,7 @@ The agent can update names and code, but it cannot infer ownership or publishing
 - container registry and deployment permissions
 - installer defaults and release artifact names
 
-Do not publish the first tag until installer URLs, image permissions, and native release targets have been verified in the destination repository.
+Do not publish the first tag until installer URLs, image permissions, and native release targets have been verified in the derived repository.
 
 ## Prove the clean baseline
 
@@ -77,7 +77,7 @@ bun run check
 bastion review --base main
 ```
 
-Finally, search for the old display name, repository slug, package scope, binary names, environment prefix, URLs, and names owned by deleted capabilities. A customized repository should describe only the destination project; this starter's identity and example domain should be gone.
+Finally, search for the old display name, repository slug, package scope, binary names, environment prefix, URLs, and names owned by deleted capabilities. A customized repository should describe only the derived project; this starter's identity and example domain should be gone.
 
 ## Reference documents
 

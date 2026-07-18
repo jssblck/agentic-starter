@@ -20,4 +20,4 @@ Read `docs/customizing.md` and `docs/architecture.md` before editing.
 
 ## Guardrails
 
-Keep executable packages thin and put dependency-injected application logic in `libs`. When native parsing remains, keep the pure Rust crate separate from the NAPI adapter and keep direct `.node` loading in `libs/native`. Delete unused capabilities completely instead of leaving disabled scripts or shims. Do not introduce fixed development ports. Do not publish a tag until installers and GHCR permissions have been tested in the destination repository.
+Keep executable packages thin and put dependency-injected application logic in `libs`. When native parsing remains, keep the pure Rust crate separate from the NAPI adapter and keep direct `.node` loading in `libs/native`. Delete unused capabilities completely instead of leaving disabled scripts or shims. Do not introduce fixed development ports. Do not publish a tag until installers and GHCR permissions have been tested in the derived repository.

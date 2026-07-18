@@ -66,7 +66,7 @@ Incur defines CLI commands, options, environment variables, help, version handli
 
 ### Drizzle and PostgreSQL
 
-PostgreSQL stands in for the stateful dependency most destination projects need. Drizzle keeps schema and query code typed while staying close to SQL, and the separate database library keeps route and command code from accumulating raw database access. Migrations are durable reviewed artifacts, and integration tests run against real PostgreSQL, because mocks cannot prove migration behavior, constraints, or database semantics. This is one of the boundaries where the expensive check is the authoritative one.
+PostgreSQL stands in for the stateful dependency most derived projects need. Drizzle keeps schema and query code typed while staying close to SQL, and the separate database library keeps route and command code from accumulating raw database access. Migrations are durable reviewed artifacts, and integration tests run against real PostgreSQL, because mocks cannot prove migration behavior, constraints, or database semantics. This is one of the boundaries where the expensive check is the authoritative one.
 
 ### Nudge and Bastion
 

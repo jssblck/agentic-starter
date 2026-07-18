@@ -32,7 +32,7 @@ Delete an unused capability instead of leaving disabled scripts, placeholder pac
 | PostgreSQL persistence  | `libs/db`, `tools/check-migrations.ts`, and `tests/integration/database.test.ts`                     | Replace the server repository. Remove Drizzle dependencies and scripts, the Postgres eph role and environment, migration startup, the CI database service and migration check, and `docs/database.md`.    |
 | HTTP API                | `bins/server` and `libs/api`                                                                         | Replace remote CLI commands or remove the CLI. Remove Elysia and Eden dependencies, server container paths, and `docs/http-api.md`.                                                                       |
 | CLI distribution        | `bins/cli`, `tools/build-cli.ts`, and `tools/release-targets.ts`                                     | Remove CLI scripts and dependencies, binary release jobs, installer scripts, release assets, CLI smoke tests, `tools/check-release.ts`, and CLI sections in the release docs.                             |
-| Containers and releases | `Dockerfile`, `scripts/docker-entrypoint.sh`, installer scripts, and `.github/workflows/release.yml` | Remove release scripts and dependencies, `release:check`, version rewriting if no other consumer needs it, and `docs/versioning-and-releases.md`. Keep any deployment path the destination actually uses. |
+| Containers and releases | `Dockerfile`, `scripts/docker-entrypoint.sh`, installer scripts, and `.github/workflows/release.yml` | Remove release scripts and dependencies, `release:check`, version rewriting if no other consumer needs it, and `docs/versioning-and-releases.md`. Keep any deployment path the derived project actually uses. |
 | Shared build identity   | `libs/version`, `tools/write-version.ts`, and `tools/check-version.ts`                               | Remove version imports, API version endpoints, Rust build-script integration, release rewrites, and `version:check`. Remove this after native and release consumers are gone.                             |
 | Worktree-local services | `.eph` and `.env.example` service values                                                             | Remove `eph` from `doctor`, `policy:check`, CI policy setup, the fixed-port Nudge rule and fixtures, and service instructions. Keep Git worktrees and the fast check classification.                      |
 
@@ -71,4 +71,4 @@ git add bun.lock
 
 The first install updates workspace names inside `bun.lock`; the frozen install proves that its package graph still agrees with the manifests. `Cargo.lock` is committed and every Cargo command should use it.
 
-Create `v0.1.0` only after installer URLs, image permissions, and release runners are verified in the destination repository.
+Create `v0.1.0` only after installer URLs, image permissions, and release runners are verified in the derived repository.
