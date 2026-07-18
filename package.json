@@ -34,7 +34,7 @@
     "cli": "bun bins/cli/src/main.ts",
     "build:cli": "bun tools/build-cli.ts",
     "build:server": "bun build bins/server/src/main.ts --target=bun --minify --outfile=dist/server.js",
-    "policy:check": "nudge validate && bun tools/check-nudge-rules.ts && nudge check bins libs tools tests crates && bastion validate && eph check"
+    "policy:check": "nudge validate && bun tools/check-nudge-rules.ts && bun tools/check-skills-sync.ts && nudge check bins libs tools tests crates && bastion validate && eph check"
   },
   "dependencies": {
     "@starter/db": "workspace:*",
