@@ -14,6 +14,8 @@
     ".agents/skills/using-bastion/**",
     ".claude/skills/using-bastion/**",
     ".agents/skills/emulate/**",
-    ".claude/skills/emulate/**"
+    ".claude/skills/emulate/**",
+    ".agents/skills/using-eph/**",
+    ".claude/skills/using-eph/**"
   ]
 }
