@@ -14,7 +14,7 @@ A change that modifies TypeScript and Rust belongs in one worktree and one commi
 
 Codex and Claude copy the ignored `.env` file listed in `.worktreeinclude`. Each worktree gets its own dependency graph. Neither tool copies `node_modules`.
 
-The Codex local environment and Claude `SessionStart` hook install locked dependencies and prewarm the worktree's Postgres service. Codex exposes actions for starting the full stack and running the repository checks.
+The Codex local environment and Claude `SessionStart` hook force-refresh `origin/main` and rebase the workspace branch onto it before installing locked dependencies and prewarming Postgres. Setup stops if the fetch or rebase fails. Codex exposes actions for starting the full stack and running the repository checks.
 
 Codex cleanup and Claude's `WorktreeRemove` hook run `eph clean`. Removing an agent-managed worktree also removes its Postgres container, volume, and saved eph state.
 
