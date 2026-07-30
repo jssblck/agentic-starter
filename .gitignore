@@ -28,7 +28,12 @@ libs/native/artifacts/*
 .bastion/runs/
 .bastion/*.jsonl
 .claude/settings.local.json
-.codex/
+.claude/worktrees/
+!.codex/
+.codex/*
+!.codex/environments/
+.codex/environments/*
+!.codex/environments/environment.toml
 plans/
 
 # Editor and operating-system files

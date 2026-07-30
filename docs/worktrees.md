@@ -10,6 +10,14 @@ git worktree add ../worktrees/agent-42 -b agent/42 main
 
 A change that modifies TypeScript and Rust belongs in one worktree and one commit series. Separate language-specific worktrees make interface changes non-atomic and move integration failures later.
 
+## Agent-managed worktrees
+
+Codex and Claude copy the ignored `.env` file listed in `.worktreeinclude`. Each worktree gets its own dependency graph. Neither tool copies `node_modules`.
+
+The Codex local environment and Claude `SessionStart` hook install locked dependencies and prewarm the worktree's Postgres service. Codex exposes actions for starting the full stack and running the repository checks.
+
+Codex cleanup and Claude's `WorktreeRemove` hook run `eph clean`. Removing an agent-managed worktree also removes its Postgres container, volume, and saved eph state.
+
 ## Bun state
 
 Each checkout has its own `node_modules` link graph. `bunfig.toml` selects the isolated linker so undeclared dependencies do not become accidentally visible. Bun's global store shares immutable package bytes across worktrees.

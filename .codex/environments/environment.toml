@@ -1,0 +1,21 @@
+version = 1
+name = "agentic-starter"
+
+[setup]
+script = '''
+bun install --frozen-lockfile
+eph up --role dep
+'''
+
+[cleanup]
+script = "eph clean"
+
+[[actions]]
+name = "Dev"
+icon = "run"
+command = "eph up"
+
+[[actions]]
+name = "Check"
+icon = "tool"
+command = "bun run check"
