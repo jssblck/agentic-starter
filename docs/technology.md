@@ -90,4 +90,4 @@ Git tags are the version source because a release already has a tag. The same re
 
 ## Applying these choices
 
-The technology mix is a starting hypothesis. Preserve the fast Bun and TypeScript control plane and the agent-policy feedback loop, then keep each example capability only when its guarantees serve your project. The [customization guide](customizing.md) defines the supported capability boundaries and the checks required after each removal. [Architecture](architecture.md) documents the dependency direction and invariants that follow from these decisions, and the records in `docs/decisions` preserve narrower choices that a derived project may need to replace.
+The technology mix is a starting hypothesis. Preserve the fast Bun and TypeScript control plane and the agent-policy feedback loop, then keep each example capability only when its guarantees serve your project. The [customization guide](customizing.md) defines the supported capability boundaries and the checks required after each removal. [Architecture](architecture.md) documents the dependency direction and invariants that follow from these decisions.

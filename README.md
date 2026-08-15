@@ -97,5 +97,3 @@ Example-capability documentation, removed or rewritten together with its capabil
 - [HTTP API](docs/http-api.md) covers the Elysia and Eden contract.
 - [Web UI](docs/web-ui.md) covers the React app, its state rules, and its testing pattern.
 - [Versioning and releases](docs/versioning-and-releases.md) covers the release pipeline.
-
-Decision records in `docs/decisions` preserve narrower choices that a derived project may need to replace.
