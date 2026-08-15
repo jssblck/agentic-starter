@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "doctor": "node tools/doctor.ts",
-    "postinstall": "npx -y skills@1.5.22 add jssblck/agents -a claude-code -a codex -y",
+    "postinstall": "npx -y skills@1.5.22 add jssblck/agents -a claude-code -a codex -y || echo \"skills install skipped; run pnpm run skills:update later\"",
     "skills:update": "npx -y skills@1.5.22 update -y",
     "secrets": "node tools/secrets.ts",
     "dev": "eph up",
