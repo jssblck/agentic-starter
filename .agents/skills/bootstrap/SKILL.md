@@ -37,7 +37,7 @@ Trace the current identity by role, not by string:
 - `NOTICE`, `SECURITY.md`, `LICENSE` holder, `README.md` first heading and paragraph
 - `.github/CODEOWNERS` teams
 - environment prefix in `.eph` `[env]`
-- `.sops.yaml` recipients: replace the placeholder public keys with the user's `personal`, `agent`, and `prod` keys, then `pnpm secrets init dev` and `pnpm secrets init prod` (see `docs/secrets.md`)
+- `.sops.yaml` recipients: replace the placeholder public keys with the user's shared `personal` and `agent` keys and a new per-project `prod` key (`age-keygen`; the user stores the private key as `age-prod-<project>` and sets it on the deploy target), then `pnpm secrets init dev` and `pnpm secrets init prod` (see `docs/secrets.md`)
 - the migration lock name and cache namespace when those capabilities are added
 
 Do not run a repository-wide search-and-replace. The forms differ (`todoctl`, `TODO_API_URL`, `@starter/`, "Agentic Starter").

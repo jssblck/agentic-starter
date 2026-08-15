@@ -6,17 +6,19 @@ Secrets live in the repository as sops-encrypted dotenv files, one per deploymen
 
 ## Identities
 
-Three age identities, generated once with `age-keygen`:
+Three age identities, generated with `age-keygen`:
 
-| Identity   | Private key lives                                              | Recipient of |
-| ---------- | -------------------------------------------------------------- | ------------ |
-| `personal` | your password manager                                          | every file   |
-| `agent`    | `~/.config/sops/age/keys.txt` on every machine agents run on   | `dev.env`    |
-| `prod`     | the production platform (Railway variable, systemd credential) | `prod.env`   |
+| Identity   | Scope       | Private key lives                                                         | Recipient of |
+| ---------- | ----------- | ------------------------------------------------------------------------- | ------------ |
+| `personal` | user-wide   | your password manager                                                     | every file   |
+| `agent`    | user-wide   | `~/.config/sops/age/keys.txt` on every machine agents run on              | `dev.env`    |
+| `prod`     | per project | that project's production platform (Railway variable, systemd credential) | `prod.env`   |
+
+`personal` and `agent` are local-development keys shared by every project. `prod` is generated when the project is bootstrapped and never reused: a leaked deploy variable exposes one project's history, and rotating it touches one repository.
 
 `.sops.yaml` maps each file to its recipients by public key. Only public keys are committed. Encrypting requires no private key; decrypting or editing requires any one recipient's private key.
 
-`agent` is user-wide, not per project. Every project lists the same `agent` public key for its dev file, so an agent session on that machine can read and write dev secrets in any checkout, worktree, or shell without a prompt. One file to install per machine, nothing per project.
+Every project lists the same `agent` public key for its dev file, so an agent session on that machine can read and write dev secrets in any checkout, worktree, or shell without a prompt. One file to install per machine.
 
 ## Elevation
 
