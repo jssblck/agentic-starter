@@ -25,7 +25,7 @@ Requires the [CLI](cli.md).
 
 ## Container image
 
-Requires the [HTTP API](http-api.md).
+Requires the [API server](api-server.md) or [Web app](web-app.md).
 
 - `Dockerfile`: builder stages for Rust (`rust:<channel>-bookworm`, `cargo build --release --locked`) and the web UI (`bun run build:web`) when present; an `app-builder` stage on `oven/bun:<version>` that runs `bun install --production --frozen-lockfile` and `write-version`; a runtime stage that copies `node_modules`, `apps`, `libs`, and built assets, runs as `bun`, exposes the port, and has a `HEALTHCHECK` on `/api/health`.
 - `scripts/docker-entrypoint.sh`: runs migrations only when `RUN_MIGRATIONS=1`, then `exec "$@"`.

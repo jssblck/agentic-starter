@@ -50,6 +50,16 @@ A Bun workspace lives in one repository because a boundary change may need to to
 
 Each agent gets a complete Git worktree. Branch-sensitive state (dependency links, compiler output, databases, volumes, ports) stays isolated per worktree; immutable package contents may be shared. Fixed ports and a shared database are intolerable once several agents run full stacks concurrently, so eph declares the environment once and assigns each worktree its own data and ports. An agent never has to coordinate port numbers, copy environment files, or invent Docker commands before it can test a branch.
 
+## Next.js in front, Hono behind
+
+The web default is Next.js App Router, self-hosted on Node, with Base UI primitives and Tailwind tokens kept in the tree. Agents have more fluency with Next than with any other React framework, server components and server actions remove the client-side data layer for the common case, and the tree-shaking, code-splitting, and streaming rendering come with the framework instead of being assembled from a router, a query library, and a bundler.
+
+The API default is Hono. When the product has no browser it runs standalone on Node; when it has a browser and other clients, it mounts inside the Next app under `/api` as a two-line route handler. Its route chain yields a typed client for free, so a CLI or a service is checked against the routes at typecheck time, and OpenAPI is one adapter away when a non-TypeScript client appears. The browser does not use that API. It uses server actions and server components, which form a private surface that can change with the UI, while the mounted API is the deliberate contract other clients depend on. Both surfaces call the same `libs`; a Bastion reviewer can watch for a feature that lands in one and not the other.
+
+Two things this design gives up. The production runtime is Node rather than Bun, because Next is built and tested against Node; Bun stays the package manager and test runner. And async server components have no unit-test story in any runner, so server-rendered behavior is covered by a Playwright smoke test in `ci` while `libs`, Hono routes, and client components stay under `bun test`.
+
+Nothing here depends on Vercel. Standalone output runs as one Node process; edge runtimes, per-function timeouts, and platform caches do not enter the picture. Elysia and Eden were the previous default and were dropped: Elysia's type-level machinery produced opaque errors, and it has a fraction of Hono's training footprint.
+
 ## Nudge and Bastion
 
 Compiler and lint failures normally arrive after an agent has already written the code. Nudge moves mechanically decidable feedback into the edit itself, then repeats the same rules in CI. A violation explains what matched and how to correct it so the agent can recover rather than just being rejected. Bastion handles what a deterministic rule cannot: it reviews semantic invariants after a coherent changeset exists. The base ships Nudge rules against type-system escape hatches, fixed ports, and the wrong package manager, and a Bastion registry with no active reviewers and two suggested defaults in comments. Keeping deterministic checks in Nudge and judgment in Bastion makes failures faster and reviewer prompts more focused.

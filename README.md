@@ -41,12 +41,11 @@ The skill interviews you about the product, its identity, which surfaces it expo
 
 Each guide under `docs/capabilities` describes one addition: packages, pinned dependencies, shared-hub edits, invariants, and checks.
 
-1. HTTP API (Elysia with an Eden client contract)
+1. Web app (Next.js, self-hosted on Node, Base UI and Tailwind) and/or API server (Hono with a typed RPC client, standalone or mounted inside the Next app), chosen by who calls the backend
 2. CLI (Incur)
 3. PostgreSQL (Drizzle, immutable migrations, worktree-local database)
-4. Web UI (React, TanStack Router and Query, served same-origin)
-5. Rust behind Node-API
-6. Release (Git-tag versioning, CLI binaries and installers, container images)
+4. Rust behind Node-API
+5. Release (Git-tag versioning, CLI binaries and installers, container images)
 
 The guides were written from a working implementation at the moment it was removed. Nothing verifies them afterward except the next agent that follows one; when a guide proves wrong, fix it in the same commit as the code.
 

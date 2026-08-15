@@ -13,12 +13,13 @@ Ask these in order. Skip any the user already answered. Ask one question at a ti
 
 1. **Product.** What does the project do, in one or two sentences? Who calls it: people, other services, agents?
 2. **Identity.** Display name, repository owner and name, package scope (`@scope/`), executable names, environment variable prefix. Derive unstated values from the display name and confirm them.
-3. **Surfaces.** Which of: HTTP API, CLI, web UI, none (library only)? A web UI needs the HTTP API. A CLI usually talks to the API but can stand alone.
-4. **Persistence.** PostgreSQL, or none for now? Anything else (Redis, object storage) is an eph service the user describes; there is no guide for it yet.
-5. **Native code.** Is there a hot path or a correctness core that justifies Rust behind Node-API? Default no. Say why it costs: every worktree pays for the toolchain, and CI gains a job.
-6. **Distribution.** Source only, CLI binaries with installers, container image, or several? Default source only.
-7. **Review gate.** Enable the suggested Bastion reviewers now, later, or never? Each is a paid agent run per changeset. Default later.
-8. **Repository administration.** GitHub org or team for `CODEOWNERS`, security contact, license holder name.
+3. **Clients.** Who calls the backend: only a browser, or also a CLI, a mobile app, other services, or agents over MCP? Browser only: the Next.js `web-app` alone. Browser plus others: `web-app` with `api-server` mounted inside it; the browser uses server actions, everyone else uses `/api`. No browser: `api-server` standalone.
+4. **Surfaces.** Given the answer above: web UI, CLI, both, or neither (library only)?
+5. **Persistence.** PostgreSQL, or none for now? Anything else (Redis, object storage) is an eph service the user describes; there is no guide for it yet.
+6. **Native code.** Is there a hot path or a correctness core that justifies Rust behind Node-API? Default no. Say why it costs: every worktree pays for the toolchain, and CI gains a job.
+7. **Distribution.** Source only, CLI binaries with installers, container image, or several? Default source only.
+8. **Review gate.** Enable the suggested Bastion reviewers now, later, or never? Each is a paid agent run per changeset. Default later.
+9. **Repository administration.** GitHub org or team for `CODEOWNERS`, security contact, license holder name.
 
 ## 2. Confirm the plan
 
