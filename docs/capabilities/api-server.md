@@ -60,6 +60,31 @@ Keep the `hono` version identical across workspaces; RPC types break across mism
 - `AGENTS.md` check classification: "API contract: change the route chain in `libs/api`, then run the API tests and `bun run typecheck` so every `hc` caller is checked."
 - `AGENTS.md` invariants: "Chain Hono routes; never call `app.get` as a statement. Pass an explicit status to every `c.json`. Only `libs/api` imports `hono`'s server side; callers import the client."
 
+## Bastion reviewer
+
+Add to `.bastion.yaml` with the API:
+
+```yaml
+reviewers:
+  - name: api-contract
+    trigger: ['libs/api/**']
+    mode: gate
+    backend: codex
+    prompt: |
+      Review changes to the Hono app and client in libs/api. Flag:
+      1. A route added with a standalone `app.get(...)` statement rather
+         than in the chain; the RPC client will not see it.
+      2. A `c.json(...)` call without an explicit status; the client
+         cannot discriminate the response type.
+      3. A request body, query, or param read without `zValidator` on
+         that target.
+      4. A route that changes shape (path, params, body, response) with
+         no corresponding change to the client facade or its test.
+      5. A route or middleware that reads the browser session; this API
+         serves non-browser clients and authenticates with a bearer token.
+      Pass when none apply. Do not comment on naming or file layout.
+```
+
 ## OpenAPI
 
 Not needed for TypeScript callers. When a non-TypeScript client (iOS, another team) needs a document, add `@hono/zod-openapi`, which replaces `new Hono()` with `new OpenAPIHono()` and generates the document from the same Zod schemas. Serve it at `/api/openapi.json` and treat it as a runtime surface, not a checked-in artifact, until a consumer needs versioning.

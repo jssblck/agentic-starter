@@ -112,6 +112,68 @@ Invariants (add to `AGENTS.md`):
 - `web-no-middleware-file`: `PreToolUse` `Write` on `**/middleware.ts` (any depth under `apps/web`); message: "Next 16 uses `proxy.ts`."
 - `react-no-manual-memoization`: on `**/*.tsx`, regex `\\b(?:useMemo|useCallback|memo)\\s*\\(`; message: "The React Compiler owns memoization." Requires `reactCompiler: true` in `next.config.ts` (stable in Next 16); enable it.
 
+## Bastion reviewers
+
+The rules below are semantic; Nudge cannot express them. Add these to `.bastion.yaml` when the web app lands. Each is scoped to the paths it governs so it does not run on unrelated changes, and each is one concern.
+
+```yaml
+reviewers:
+  - name: web-rendering-semantics
+    trigger: ['apps/web/app/**']
+    mode: gate
+    backend: codex
+    prompt: |
+      Review changed files under apps/web/app for Next.js Cache Components
+      semantics. Flag only these three cases, with the file and line:
+      1. A page or layout that reads a repository, database, or store and
+         does not call `await connection()` (from next/server), read
+         `cookies()`/`headers()`/`searchParams`, or perform an uncached
+         fetch. It will be prerendered static and never reflect writes.
+      2. A page or route handler that exports `dynamic`, `revalidate`,
+         `fetchCache`, `runtime`, or `maxDuration`. These do nothing or
+         are removed in this mode.
+      3. A new `middleware.ts`. Next 16 uses `proxy.ts`.
+      Pass when none apply. Do not comment on style or structure.
+
+  - name: web-client-boundary
+    trigger: ['apps/web/app/**', 'apps/web/components/**']
+    mode: gate
+    backend: codex
+    prompt: |
+      Review changed React files for the server/client boundary. Flag:
+      1. A file with "use client" whose component uses no state, effect,
+         event handler, browser API, or client-only library; it should be
+         a server component.
+      2. A "use client" component that imports a server-only module
+         (database client, secrets, node: builtins) or a module from
+         apps/web/lib that constructs one.
+      3. A server component that passes a function or class instance
+         (not a server action) as a prop to a client component.
+      4. Data fetched in useEffect or on mount that a server component
+         or server action could have provided.
+      Pass when none apply. Do not review styling.
+
+  - name: web-shared-core
+    trigger: ['apps/web/app/**', 'apps/web/lib/**', 'libs/api/**']
+    mode: gate
+    backend: codex
+    prompt: |
+      The browser reaches data through server actions and server
+      components; other clients reach it through the Hono app in libs/api.
+      Both must call the same functions in libs. Flag:
+      1. A server action or route handler that implements a workflow
+         (validation beyond parsing input, persistence, or business rules)
+         inline instead of calling a libs function.
+      2. A feature added to one surface (a server action, or a Hono route)
+         with no corresponding path on the other, when the feature is one
+         a non-browser client would plausibly need. Ask, do not assume.
+      3. Module-level mutable state in apps/web/lib. Server bundles do not
+         share it and replicas never will.
+      Pass when none apply.
+```
+
+The [API server](api-server.md) guide adds one more for the route chain. Together with the two commented defaults in the base `.bastion.yaml` (correctness, simplicity), that is five reviewers; do not add more until one of these produces a finding you could not have caught otherwise.
+
 ## Tests
 
 - `libs` and the mounted Hono app: `bun test`, in-process, no port.
