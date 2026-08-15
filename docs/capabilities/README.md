@@ -2,7 +2,7 @@
 
 The base repository ships no application code. Each document in this directory describes one capability that a derived project can add: the packages, dependencies, shared-hub edits, invariants, and checks it needs. The `bootstrap` skill runs the interview that selects capabilities and applies these guides in dependency order.
 
-The CLI, PostgreSQL, Rust, and release guides were written from a working implementation this repository once carried. The web app and API server guides were written from verified upstream documentation in August 2026 and have not yet been exercised end to end. Nothing in the base verifies any guide, so treat pinned versions as the last known-good set and confirm each against its registry before installing. When a guide proves wrong, fix the guide in the same changeset as the code.
+The CLI, PostgreSQL, Rust, and release guides were written from a working implementation this repository once carried. The web app and API server guides were written from verified upstream documentation in August 2026 and then corrected against a throwaway build (Next 16.3, Hono 4.13, Node 22 and 26) that exercised install, typecheck, build, standalone boot, the mounted API, and server actions. Nothing in the base verifies any guide, so treat pinned versions as the last known-good set and confirm each against its registry before installing. When a guide proves wrong, fix the guide in the same changeset as the code.
 
 ## Order
 

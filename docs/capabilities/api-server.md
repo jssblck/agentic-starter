@@ -50,7 +50,7 @@ Keep the `hono` version identical across workspaces; RPC types break across mism
 ## Tests
 
 - Route tests: `app.request('/api/v1/things', { method: 'POST', body, headers })` with in-memory dependencies, under `bun test`. Or `testClient(app)` from `hono/testing` for typed calls.
-- Client tests: build the client with `fetch: (input, init) => app.fetch(new Request(input, init))` so route construction, serialization, and error conversion are covered without a port.
+- Client tests: build the client with `fetch: (input, init) => Promise.resolve(app.fetch(new Request(input, init)))` so route construction, serialization, and error conversion are covered without a port. The `Promise.resolve` matters: `app.fetch` and `app.request` return `Response | Promise<Response>`, which does not satisfy `typeof fetch`.
 - `apps/server/src/main.test.ts`: environment parsing and wiring only.
 
 ## Hubs

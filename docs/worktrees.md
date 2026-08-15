@@ -18,7 +18,7 @@ Both tools copy the ignored files listed in `.worktreeinclude` (`.env`) into a n
 
 ## Bun state
 
-Each checkout has its own `node_modules` link graph. `bunfig.toml` selects the isolated linker so an undeclared dependency does not resolve through a sibling package, and the global store shares immutable package bytes across worktrees. Never symlink one mutable `node_modules` into another checkout.
+Each checkout has its own `node_modules` link graph. `bunfig.toml` selects the isolated linker so an undeclared dependency does not resolve through a sibling package, and hard-links package files from Bun's install cache so worktrees share bytes. Do not enable `globalStore`: it replaces the hard links with symlinks into `~/.bun`, which Turbopack rejects as outside the project root. Never symlink one mutable `node_modules` into another checkout.
 
 Verify dependency changes with a fresh clone. The live checkout's link graph can predate the change and hide a missing declaration that CI will catch.
 

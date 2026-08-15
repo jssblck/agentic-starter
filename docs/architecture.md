@@ -47,7 +47,7 @@ A Nudge rule must be true or false with no judgment. Anything that needs judgmen
 
 ## Worktrees
 
-Each agent works in one complete Git worktree. Branch-sensitive state (dependency links, build output, databases, ports) is per worktree; immutable package bytes are shared through Bun's global store. `bunfig.toml` selects the isolated linker so an undeclared dependency fails locally the way it fails in a fresh clone.
+Each agent works in one complete Git worktree. Branch-sensitive state (dependency links, build output, databases, ports) is per worktree; immutable package bytes are hard-linked from Bun's install cache, so worktrees share them without a shared `node_modules`. `bunfig.toml` selects the isolated linker so an undeclared dependency fails locally the way it fails in a fresh clone.
 
 The Claude `SessionStart` hook and the Codex setup script fetch `origin/main`, install locked dependencies, and start eph services. They do not rebase; that decision belongs to the agent once it has looked at the branch. `WorktreeRemove` and Codex cleanup run `eph clean` so a removed worktree takes its containers and volumes with it.
 
