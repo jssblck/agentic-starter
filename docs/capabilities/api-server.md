@@ -11,7 +11,7 @@ Either way the Hono app lives in `libs/api` and is constructed with injected dep
 
 ## Packages
 
-- `libs/api`: `app.ts` exports `createApp(dependencies)` returning a Hono app with `basePath('/api')` and every route chained on it; `client.ts` exports `createClient(baseUrl, options)` wrapping `hc<AppType>` plus a typed error class; `index.ts` re-exports both and `type AppType`.
+- `libs/api/src`: `app.ts` exports `createApp(dependencies)` returning a Hono app with `basePath('/api')` and every route chained on it; `client.ts` exports `createClient(origin, options)` wrapping `hc<AppType>` plus a typed error class; `index.ts` re-exports both and `type AppType`. Source lives under `src/`, like every other library.
 - `apps/server` (standalone only): thin entrypoint. Reads `HOST`, `PORT`, connection URLs from the environment, constructs dependencies, calls `createApp`, starts `@hono/node-server`. Handles `SIGINT` and `SIGTERM` by closing dependencies then the server.
 
 ## Dependencies
@@ -24,7 +24,7 @@ Either way the Hono app lives in `libs/api` and is constructed with injected dep
 | `@hono/node-server`   | 2.1.1   | `apps/server` only                                              |
 | `@hono/zod-openapi`   | 1.6.0   | optional, only if a published OpenAPI document is a requirement |
 
-Keep the `hono` version identical across workspaces; RPC types break across mismatched versions. Both client and server `tsconfig` need `strict: true` (the base already has it).
+Keep the `hono` version identical across workspaces; RPC types break across mismatched versions. Both client and server `tsconfig` need `strict: true` (the base already has it). Declare `vitest` in every workspace that has a test file: under the isolated linker a root devDependency does not resolve from `libs/api`.
 
 ## Shape
 
@@ -45,7 +45,7 @@ Keep the `hono` version identical across workspaces; RPC types break across mism
 - Always pass an explicit status to `c.json(...)`. The client's response type is discriminated on it: `if (res.ok) { const data = await res.json() }` narrows to the 2xx shape, `res.status === 404` to that shape. Test `res.ok` first and return; then handle the declared error statuses. Checking `!res.ok` after a status check narrows `res` to `never`, because only declared statuses exist in the union.
 - Typed errors: `erasableSyntaxOnly` rejects constructor parameter properties (`constructor(readonly status: number)`), so declare the fields on the class and assign them in the constructor.
 - Validate every input with `zValidator('json' | 'query' | 'param' | ...)`. Read it with `c.req.valid(target)`. Return `{ code, message }` for expected failures with a 4xx status.
-- The client wraps `hc<AppType>(origin, { fetch, headers })`. Pass the **origin only** (`http://localhost:3000`); the inferred paths already include `/api`. Convert non-ok responses into a thrown typed error so callers never see Hono's `{ ok, status }` shape.
+- The client wraps `hc<AppType>(origin, { fetch, headers })`. Pass the **origin only** (`http://localhost:3000`); the inferred paths already include `/api`. Convert non-ok responses into a thrown typed error so callers never see Hono's `{ ok, status }` shape. Type the facade's return values with `InferResponseType<Client['api']['v1']['things']['$get'], 200>` rather than restating the shape; that keeps the client honest about JSON serialization (dates arrive as strings).
 - Auth for non-browser clients is a bearer token checked in Hono middleware. Do not reuse the browser session. Inject the check as an `authenticate(request): Promise<Principal | undefined>` dependency so tests use a static token map and production uses Clerk (see [Auth](auth.md)). Middleware that returns early must `return next()` on the success path or `noImplicitReturns` fails.
 
 ## Tests
@@ -57,7 +57,7 @@ Keep the `hono` version identical across workspaces; RPC types break across mism
 ## Hubs
 
 - `package.json`: standalone only: `dev:server` (`node --watch apps/server/src/main.ts`), `start:server` (`node apps/server/src/main.ts`). Node runs the TypeScript source directly in every environment; the container image copies the pruned workspace instead of a bundle (release capability).
-- `.eph`: standalone only: `[server]` block with `run=node tools/secrets.ts exec dev -- node --watch apps/server/src/main.ts`, `role=app`, `port=auto`, `env.PORT=${server.port}`; `[env]` entry `<PREFIX>_API_URL=http://localhost:${server.port}`. Mounted: the Next dev server already serves `/api`; point `<PREFIX>_API_URL` at it.
+- `.eph`: standalone only: `[server]` block with `run=node tools/secrets.ts exec dev -- node --watch apps/server/src/main.ts`, `role=app`, `port=auto`, `env.PORT=${server.port}`; `[env]` entry `<PREFIX>_API_URL=http://localhost:${server.port}`. Mounted: the Next dev server already serves `/api`, and there is no `<PREFIX>_API_URL` to add. Putting `${web.port}` in a top-level `[env]` variable breaks `eph env` while the app is down, which the [Web app](web-app.md) guide already warns about. Clients read the URL from `eph status`.
 - `AGENTS.md` check classification: "API contract: change the route chain in `libs/api`, then run the API tests and `pnpm run typecheck` so every `hc` caller is checked."
 - `AGENTS.md` invariants: "Chain Hono routes; never call `app.get` as a statement. Pass an explicit status to every `c.json`. Only `libs/api` imports `hono`'s server side; callers import the client."
 

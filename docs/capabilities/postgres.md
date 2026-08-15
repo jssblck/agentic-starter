@@ -11,19 +11,24 @@ Postgres is the default store, and it stays the default until it cannot hold the
 
 ## Packages
 
-- `libs/db`: `schema.ts` (Drizzle tables), `client.ts` (`createDatabase(url)` returning `{ db, close }`; `import { Pool } from 'pg'`, the named export, or `import/no-named-as-default-member` fires), `repository.ts` (the only application-facing persistence API, mapping rows to domain values; accepts optional hooks such as `onCreated(tx, row)` so an app can enqueue inside the same transaction), `memory.ts` (an in-memory repository for tests), `migrations.ts` (`runMigrations(url, directory, lockName)`), `migrate.ts` (entrypoint that reads `DATABASE_URL`), `repository.integration.test.ts`.
+- `libs/db`: `schema.ts` (Drizzle tables), `client.ts` (`createDatabase(url)` returning `{ db, close }`; `import { Pool } from 'pg'`, the named export, or `import/no-named-as-default-member` fires), `repository.ts` (the only application-facing persistence API, mapping rows to domain values; accepts optional hooks such as `onCreated(tx, row)` so an app can enqueue inside the same transaction), `memory.ts` (an in-memory repository for tests), `migrations.ts` (`runMigrations(url, directory, lockName)` and `migrationsDirectory()`), `repository.integration.test.ts`.
+
+  There is no `migrate.ts` in `libs/db`. The migration entrypoint belongs to an app (`apps/worker/src/migrate.ts`), for two reasons: `env-no-direct-process-env` forbids reading `DATABASE_URL` anywhere under `libs/`, and a filtered production install (`pnpm install --prod --filter @scope/worker...`) links workspace packages only for that app, so a script in `tools/` that imports `@scope/db` fails with `ERR_MODULE_NOT_FOUND` inside the image.
+
+  Export the migrations directory as a **function**, not a module-scope constant. A constant computed from `import.meta.dirname` is evaluated when a Next server bundle imports the package, where `import.meta.dirname` is undefined, and `next build` fails with `The "paths[0]" argument must be of type string` while collecting page data.
+
 - `libs/db/drizzle.config.ts` and `libs/db/drizzle/*.sql` (generated migrations).
 - `tools/check-migrations.ts`: fails when a committed migration file was modified relative to the PR base.
-- Integration tests live next to the code as `libs/**/*.integration.test.ts` and skip when `DATABASE_URL` is unset. A root `tests/integration` directory cannot import workspace packages under the isolated linker without adding them to the root `package.json`.
+- Integration tests live next to the code as `libs/**/*.integration.test.ts` and skip when the database URL is empty. A root `tests/integration` directory cannot import workspace packages under the isolated linker without adding them to the root `package.json`. They must not read `process.env` (it is under `libs/`): put `provide: { databaseUrl: process.env['DATABASE_URL'] ?? '' }` on the `integration` project in `vitest.config.ts` and read it with `inject('databaseUrl')`.
 
 ## Dependencies
 
-| Package       | Version | Where                |
-| ------------- | ------- | -------------------- |
-| `drizzle-orm` | 0.45.2  | `libs/db`            |
-| `drizzle-kit` | 0.31.10 | root devDependencies |
-| `pg`          | 8.23.0  | `libs/db`            |
-| `@types/pg`   | 8.21.0  | `libs/db`, dev       |
+| Package       | Version | Where          |
+| ------------- | ------- | -------------- |
+| `drizzle-orm` | 0.45.2  | `libs/db`      |
+| `drizzle-kit` | 0.31.10 | `libs/db`, dev |
+| `pg`          | 8.23.0  | `libs/db`      |
+| `@types/pg`   | 8.21.0  | `libs/db`, dev |
 
 Postgres image: `postgres:18-alpine` (18 is GA; 14 reaches end of life in November 2026).
 
@@ -60,7 +65,7 @@ pnpm run db:migrate
 
 ## Hubs
 
-- `package.json`: `db:generate` (`drizzle-kit generate --config libs/db/drizzle.config.ts`), `db:migrate` (`node libs/db/src/migrate.ts`), `db:migrations:check` (`node tools/check-migrations.ts`), `test:integration` (`vitest run --project integration`). In `vitest.config.ts`, split `test.projects` into `unit` (the existing include, excluding `**/*.integration.test.ts`) and `integration` (`libs/**/*.integration.test.ts`), and change `test` to `vitest run --project unit` so `check` never needs a database. Add `db:migrations:check` and `test:integration` to `ci`, not `check`.
+- `package.json`: `db:generate` (`pnpm --filter @scope/db exec drizzle-kit generate --config drizzle.config.ts`, because `drizzle-kit` is declared in `libs/db`), `db:migrate` (`node apps/worker/src/migrate.ts`), `db:migrations:check` (`node tools/check-migrations.ts`), `test:integration` (`vitest run --project integration`). In `vitest.config.ts`, split `test.projects` into `unit` (the existing include, excluding `**/*.integration.test.ts`) and `integration` (`libs/**/*.integration.test.ts`), and change `test` to `vitest run --project unit` so `check` never needs a database. Add `db:migrations:check` and `test:integration` to `ci`, not `check`.
 - `.eph`:
 
   ```ini
@@ -87,4 +92,5 @@ pnpm run db:migrate
 - `.nudge.yaml`: a `UserPromptSubmit` reminder on `(?i)(database|schema|migration|column|postgres|drizzle)` that says schema changes need generated SQL, matching input schemas, and migration tests. Add positive and negative fixtures and register them in `tools/check-nudge-rules.ts`.
 - `AGENTS.md` check classification: "Database schema: edit `libs/db/src/schema.ts`, run `pnpm run db:generate`, inspect the SQL, and add migration tests. Never edit a migration that may already have shipped."
 - `AGENTS.md` invariants: "Keep raw SQL and Drizzle access inside `libs/db`. Reach for Postgres before any second datastore."
-- Docker (release capability): the entrypoint runs `node libs/db/src/migrate.ts` only when `RUN_MIGRATIONS=1`; run migrations as a separate release step, not from every replica.
+- Docker (release capability): the entrypoint runs `node apps/worker/src/migrate.ts` only when `RUN_MIGRATIONS=1`, and only the worker image carries `libs/db`; run migrations as a separate release step, not from every replica.
+- `tools/check-migrations.ts` needs a base revision. Take `--base <sha>` (CI passes the PR base), fall back to `origin/main`, and skip with a message when neither exists, so `ci` still runs on a clone with no remote.

@@ -16,7 +16,7 @@ rm apps/web/README.md apps/web/CLAUDE.md apps/web/pnpm-workspace.yaml
 
 `apps/` must exist first; otherwise the CLI reports "application path is not writable". It writes a nested `pnpm-workspace.yaml` (delete it, but move its `allowBuilds` entries for `sharp` and `unrs-resolver` into the root file, with `sharp: true`) and a `packageManager` field (delete it).
 
-Then replace what it wrote: `apps/web/package.json` (name, exact pins from the table below, no `ignoreScripts`), `apps/web/tsconfig.json` (extend the root and keep the Next plugin, see below), `next.config.ts` (see Configuration). Keep its `.gitignore` or fold the entries into the root one; it ignores `next-env.d.ts`, which Next 16 regenerates. Keep `apps/web/AGENTS.md`: `next dev` rewrites it on every run with a block that points agents at `node_modules/next/dist/docs`, and committing it is the only way to keep the tree clean.
+Then replace what it wrote: `apps/web/package.json` (name, exact pins from the table below, no `ignoreScripts`), `apps/web/tsconfig.json` (extend the root and keep the Next plugin, see below), `next.config.ts` (see Configuration). Delete the sample SVGs it puts in `public/`; if that leaves the directory empty, remove it and make the Playwright copy step tolerate its absence. Keep its `.gitignore` or fold the entries into the root one; it ignores `next-env.d.ts`, which Next 16 regenerates. Keep `apps/web/AGENTS.md`: `next dev` rewrites it on every run with a block that points agents at `node_modules/next/dist/docs`, and committing it is the only way to keep the tree clean.
 
 Then the UI kit:
 
@@ -65,7 +65,9 @@ pnpm dlx shadcn@latest add button input textarea dialog
 
 Next requires Node 20.9+; the base pins 24 or later. `pnpm-workspace.yaml` `allowBuilds`: `sharp: true`, `unrs-resolver: false`.
 
-`apps/web/tsconfig.json` extends the root, sets `jsx: "preserve"`, `allowJs`, `incremental`, `plugins: [{ name: "next" }]`, `paths: { "@/*": ["./*"] }`, and includes `next-env.d.ts`, `**/*.ts`, `**/*.tsx`, `.next/types/**/*.ts`. The root `tsconfig.json` excludes `apps/web/**`.
+`apps/web/tsconfig.json` extends the root, **overrides `module: "ESNext"` and `moduleResolution: "Bundler"`** (the root is `NodeNext`, which Next does not accept), and sets `jsx: "preserve"`, `allowJs`, `incremental`, `resolveJsonModule`, `plugins: [{ name: "next" }]`, `paths: { "@/*": ["./*"] }`. Include `next-env.d.ts`, `**/*.ts`, `**/*.tsx`, `**/*.mts`, `.next/types/**/*.ts`, and `.next/dev/types/**/*.ts` (Next 16 writes the last one).
+
+The root `tsconfig.json` excludes `apps/web/**` and must **include `playwright.config.ts`**. Without it, type-aware lint sees `process` as `error`-typed in that file and reports `no-unsafe-member-access`.
 
 ## Configuration
 
@@ -84,7 +86,9 @@ const config: NextConfig = {
       '../../node_modules/.pnpm/@swc+helpers*/node_modules/@swc/helpers/esm/**/*',
     ],
   },
-  experimental: { serverActions: { allowedOrigins: [/* public hostnames behind the proxy */] } },
+  // Omit serverActions.allowedOrigins until there are real hostnames; an
+  // empty array is not the same as leaving it unset.
+  outputFileTracingRoot: join(import.meta.dirname, '..', '..'),
   async headers() {
     return [{ source: '/api/:path*', headers: [{ key: 'X-Accel-Buffering', value: 'no' }] }]
   },
@@ -104,6 +108,8 @@ const config: NextConfig = {
 - Multi-instance (replicas, rolling deploys): set `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` at build on every instance, or actions fail across instances. The default cache is per instance; configure `cacheHandler` (the Redis example in the Next repo) only when a second replica exists.
 
 ## Styling and components
+
+`create-next-app` wires `next/font/google`, which makes every build fetch from Google. That is a build-time network dependency an offline or restricted container builder cannot satisfy. Unless the design needs a webfont, delete the font imports and set `--font-sans` and `--font-mono` to a system stack in `@theme`.
 
 Tailwind 4 with no config file: `postcss.config.mjs` contains `{ plugins: { '@tailwindcss/postcss': {} } }`, and `app/globals.css` starts with `@import 'tailwindcss'` followed by `@theme { ... }` tokens. Import it from the root layout.
 
@@ -192,12 +198,12 @@ The [API server](api-server.md) guide adds one more for the route chain. Togethe
 
 - `libs` and the mounted Hono app: Vitest, in-process, no port.
 - Client components: Vitest with happy-dom (`environment: "happy-dom"` on a `web` project in `vitest.config.ts`), rendering the component with its props. Do not render server components this way; Next documents that async server components are not unit-testable in Vitest or Jest either.
-- Server components, server actions, and routing: one Playwright smoke test in `tests/e2e` against the built standalone server. `playwright.config.ts` at the root uses `webServer` with the copy step and `node apps/web/.next/standalone/apps/web/server.js` (a monorepo standalone nests under `apps/web`), `url` pointing at `/api/health`, and the environment the server needs (`PORT`, `HOSTNAME=127.0.0.1`, `DATABASE_URL`). It runs in `ci`, not `check`. Locally, run `pnpm dlx playwright install --with-deps chromium` once; the browser needs system libraries. Once auth is installed the smoke test needs real Clerk test keys; see [Auth](auth.md).
+- Server components, server actions, and routing: one Playwright smoke test in `tests/e2e` against the built standalone server. `playwright.config.ts` at the root uses `webServer` with the copy step and `node apps/web/.next/standalone/apps/web/server.js` (a monorepo standalone nests under `apps/web`) and the environment the server needs (`PORT`, `HOSTNAME=127.0.0.1`, `DATABASE_URL`). Point `url` at `/` until the [API server](api-server.md) is mounted, then at `/api/health`. Pick the port from an environment variable with a default so two worktrees can run `test:e2e` at once. Put the copy step in a small `tools/serve-standalone.ts` rather than a shell string: it has to create the destination directories and tolerate a missing `public/`. It runs in `ci`, not `check`. Locally, run `pnpm dlx playwright install --with-deps chromium` once; the browser needs system libraries. Once auth is installed the smoke test needs real Clerk test keys; see [Auth](auth.md).
 
 ## Hubs
 
 - `package.json`: `typegen` (`pnpm --filter @scope/web exec next typegen`), `dev:web` (`pnpm --filter @scope/web dev`), `build:web` (`pnpm --filter @scope/web build`), `test:e2e` (`playwright test`). Put `pnpm run typegen &&` at the front of `check`: the `PageProps` and `LayoutProps` globals and `next-env.d.ts` do not exist on a fresh clone until typegen runs, and type-aware lint fails on them before typecheck would. Extend `typecheck` with `&& tsc --noEmit -p apps/web/tsconfig.json`. Add `build:web` and `test:e2e` to `ci`. Set `SKIP_ENV_VALIDATION=1` on `typegen` and `build:web` when the env module has server variables without defaults; `next build` evaluates route modules that import it (see [Environment](env.md)).
-- `.eph`: `[web]` block with `run=node tools/secrets.ts exec dev -- sh -c 'cd apps/web && exec node_modules/.bin/next dev'`, `role=app`, `port=auto`, `env.PORT=${web.port}`. eph interpolates `${web.port}` only in `env.*` and top-level variables, not in `run=`; `next dev` reads `PORT`. The `exec` form matters: `run=pnpm --filter ... dev` leaves `next-server` alive after `eph down` and the next `eph up` fails on "existing server". Do not put `${web.port}` in a top-level `[env]` variable: `eph env` refuses to resolve while the app is down, which breaks `eph up --role dep`. Clients read the URL from `eph status` after `eph up`.
+- `.eph`: `[web]` block with `run=node tools/secrets.ts exec dev -- sh -c 'cd apps/web && exec node_modules/.bin/next dev'`, `role=app`, `port=auto`, `env.PORT=${web.port}`. Add a top-level `roles_order=app` at the same time: as soon as any service declares `role=`, eph refuses to parse a file without it. It becomes `roles_order=dep,app` when [PostgreSQL](postgres.md) lands. eph interpolates `${web.port}` only in `env.*` and top-level variables, not in `run=`; `next dev` reads `PORT`. The `exec` form matters: `run=pnpm --filter ... dev` leaves `next-server` alive after `eph down` and the next `eph up` fails on "existing server". Do not put `${web.port}` in a top-level `[env]` variable: `eph env` refuses to resolve while the app is down, which breaks `eph up --role dep`. Clients read the URL from `eph status` after `eph up`.
 - `.oxlintrc.json`, `.oxfmtrc.json`, `.gitignore`: ignore `apps/web/.next/**` and `apps/web/next-env.d.ts`. Add an oxlint override for `apps/web/app/layout.tsx` turning off `import/no-unassigned-import` (the CSS import).
 - `pnpm-workspace.yaml`: `allowBuilds` entries `sharp: true`, `unrs-resolver: false`.
 - `.github/workflows/ci.yml`: `pnpm dlx playwright install --with-deps chromium` before `pnpm run ci`.

@@ -43,7 +43,7 @@ Prefer tagged unions with exhaustive switches for lifecycle states, branded type
 | Capability checks | `ci`                      | migrations, native builds, release matrices, integration                              |
 | Bastion           | after a changeset         | semantic invariants a rule cannot express                                             |
 
-A Nudge rule must be true or false with no judgment. Anything that needs judgment is a Bastion reviewer, and a reviewer covers one concern. Do not move a rule between layers because it is easier to write there.
+A Nudge rule must be true or false with no judgment. Nudge globs (0.5.1) have no negation and no brace alternation, and both fail silently: a rule that needs an exception is expressed by placing the exempt files outside the include globs, with one `on:` entry per glob and tool. Anything that needs judgment is a Bastion reviewer, and a reviewer covers one concern. Do not move a rule between layers because it is easier to write there.
 
 ## Worktrees
 

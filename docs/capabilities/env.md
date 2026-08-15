@@ -32,16 +32,36 @@ Both accept Zod 4 (Standard Schema). For a process without a client bundle, `env
 
   Bracket access is what `noPropertyAccessFromIndexSignature` requires; Next still inlines `NEXT_PUBLIC_*` for a literal key. Client variables must carry `NEXT_PUBLIC_`. With `output: 'standalone'`, add both `@t3-oss/env-nextjs` and `@t3-oss/env-core` to `transpilePackages`.
 
-  Do not import the env module from `next.config.ts`. `next build` already evaluates every route module that imports it, and `next typegen` (which runs in `check`) would need every server variable too. Run `typegen` and `build:web` with `SKIP_ENV_VALIDATION=1`; validation happens at boot. Note that a throw inside Next's `instrumentation.ts` does not stop the server (see [Web app](web-app.md)); the container entrypoint runs a one-line env check before `server.js`. Local processes and containers start through `pnpm secrets exec <env> --` so the decrypted values are in `process.env` before the schema runs.
+  Do not import the env module from `next.config.ts`. `next build` already evaluates every route module that imports it, and `next typegen` (which runs in `check`) would need every server variable too. Run `typegen` and `build:web` with `SKIP_ENV_VALIDATION=1`; validation happens at boot. Note that a _throw_ inside Next's `instrumentation.ts` does not stop the server (see [Web app](web-app.md)), but `process.exit(1)` does. Import the env module dynamically inside `register()` and exit on failure; that keeps one source of truth and needs no separate env-check script in the image:
 
-- `apps/server/src/env.ts`, `apps/worker/src/env.ts`: `createEnv({ server, runtimeEnv: process.env, emptyStringAsUndefined: true })`.
+  ```ts
+  const { env } = await import('@/env').catch((error: unknown) => {
+    console.error(`environment is invalid: ${String(error)}`)
+    process.exit(1)
+  })
+  ```
+
+  Next also compiles `instrumentation.ts` for the Edge runtime and warns that `process.exit` is unavailable there. The warning is expected on a Node deployment; the build still succeeds. Local processes and containers start through `pnpm secrets exec <env> --` so the decrypted values are in `process.env` before the schema runs.
+
+- `apps/server/env.ts`, `apps/worker/env.ts`: `createEnv({ server, runtimeEnv: process.env, emptyStringAsUndefined: true })`. Keep the env module **beside** `src/`, not inside it. That placement is what excludes it from the Nudge rule below, which cannot express an exception.
 - `apps/cli`: Incur already declares env schemas per command; do not add a second layer.
-- `libs` never read the environment. They receive configuration as constructor arguments from the app that decoded it.
+- `libs` never read the environment. They receive configuration as constructor arguments from the app that decoded it. That includes integration tests under `libs/`: put the value in `test.provide` in `vitest.config.ts` (which may read `process.env`) and read it with `inject('databaseUrl')`. Declare the shape with a `declare module 'vitest' { interface ProvidedContext { ... } }` block inside `vitest.config.ts`; a standalone `.d.ts` needs a module marker that `unicorn/require-module-specifiers` rejects.
 - Secret values live in `secrets/<env>.env` ([Secrets](../secrets.md)); `.eph` supplies the ones that depend on assigned ports; everything else has a schema default. There is no `.env.example`: the schema is the list.
 
 ## Nudge rule
 
-`env-no-direct-process-env`: on `apps/**/src/**/*.ts` and `apps/web/app/**/*.tsx` and `libs/**/*.ts`, excluding `**/env.ts`, `**/cli.ts` (Incur), and `tools/**`: regex `process\.env\b`; message: "Read configuration from the app's `env` module." Fixtures both ways.
+`env-no-direct-process-env`: regex `process\.env\b`; message: "Read configuration from the app's `env` module." Fixtures both ways.
+
+Nudge has no exclusion syntax, so the file set is expressed entirely by what the include globs reach: `apps/**/src/**/*.ts`, `apps/web/app/**/*.ts`, `apps/web/app/**/*.tsx`, `libs/**/*.ts`. Each glob needs its own `on:` entry, twice (`Write` with `content`, `Edit` with `new_content`), so this one rule is eight entries.
+
+Two things about Nudge globs, both verified against `nudge` 0.5.1 and both silent failures rather than errors:
+
+- `!(...)` at the top level fails to parse the rule at all; `!(name).ts` inside a path validates and then matches nothing.
+- Brace alternation (`{apps,libs}/**/*.ts`) validates and matches nothing.
+
+So an "everything except" rule is not expressible. Place the files that must be exempt outside the include globs instead: `apps/*/env.ts` rather than `apps/*/src/env.ts`, and `tools/**` for anything else that legitimately reads the environment (a migration entrypoint is better placed in an app, see [PostgreSQL](postgres.md)).
+
+A rule that matches on path alone still needs a content matcher; `(?s)^.*$` is the catch-all.
 
 ## Hubs
 
