@@ -39,6 +39,7 @@ The skill interviews you about the product, its identity, which surfaces it expo
 - sops-encrypted secrets committed per environment, with a user-wide agent key for dev and per-checkout elevation for prod (`docs/secrets.md`).
 - Claude Code and Codex hooks that fetch, install, and start services in a fresh worktree, and clean up when it is removed.
 - `pnpm run doctor` to report which tools are present.
+- Shared agent skills from [jssblck/agents](https://github.com/jssblck/agents), installed into `.agents/skills` and `.claude/skills` by `pnpm install`. Every checkout, worktree, and cloud sandbox gets them without machine-level setup.
 
 ## Capabilities
 

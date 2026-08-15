@@ -12,7 +12,7 @@ A change that spans several packages belongs in one worktree and one commit seri
 
 Claude Code's `SessionStart` hook and Codex's setup script run the same three steps: fetch `origin/main`, `pnpm install --frozen-lockfile`, `eph up`. They stop when any step fails. They do not rebase the branch; look at the branch, then decide.
 
-Neither tool copies `node_modules`. `.worktreeinclude` lists ignored files to copy into a new worktree; the base lists none, because secrets are committed encrypted (see below).
+Neither tool copies `node_modules`. `.worktreeinclude` lists ignored files to copy into a new worktree; the base lists none, because secrets are committed encrypted (see below) and shared skills are installed by `pnpm install`.
 
 `WorktreeRemove` and Codex cleanup run `eph clean`, which removes the worktree's containers, volumes, and saved eph state.
 

@@ -1,6 +1,20 @@
 # Dependencies
 node_modules/
 
+# Shared skills installed by postinstall (repo-owned skills are listed below).
+# skills-lock.json records what was last seen upstream; it does not pin, so it is not committed.
+skills-lock.json
+.agents/skills/*
+.claude/skills/*
+!.agents/skills/bootstrap/
+!.agents/skills/emulate/
+!.agents/skills/using-bastion/
+!.agents/skills/using-eph/
+!.claude/skills/bootstrap
+!.claude/skills/emulate
+!.claude/skills/using-bastion
+!.claude/skills/using-eph
+
 # Build output
 dist/
 build/

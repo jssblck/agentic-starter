@@ -30,16 +30,17 @@ Every capability touches some of these files. Edit each with the `mergeable-edit
 
 After each guide, verify from a fresh clone: `git clone` to a scratch directory, `pnpm install --frozen-lockfile`, `pnpm run check`. The live checkout's link graph and generated files (Next's `next-env.d.ts`, `.next/types`) hide errors a clean machine hits.
 
-| Hub                                          | What a capability adds                                                 |
-| -------------------------------------------- | ---------------------------------------------------------------------- |
-| `package.json`                               | workspace dependencies, scripts, `check` and `ci` steps                |
-| `pnpm-workspace.yaml`                        | `allowBuilds` entries for dependencies that run install scripts        |
-| `.github/workflows/ci.yml`                   | a job or step for the capability's authoritative check                 |
-| `.eph`                                       | a service block or environment variables                               |
-| `.nudge.yaml`                                | deterministic rules, each with fixtures in `tests/fixtures/nudge`      |
-| `.bastion.yaml`                              | a single-concern reviewer when a semantic invariant needs judgment     |
-| `AGENTS.md`                                  | one line in the check classification and any new invariants            |
-| `.oxlintrc.json`, `.oxfmtrc.json`, `.ignore` | ignore patterns for generated files                                    |
-| `tools/doctor.ts`                            | a probe for a new required tool                                        |
-| `vitest.config.ts`                           | a project for tests that need an environment or a service              |
-| `secrets/<env>.env`                          | every secret the capability's env schema requires (`pnpm secrets set`) |
+| Hub                                          | What a capability adds                                                              |
+| -------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `package.json`                               | workspace dependencies, scripts, `check` and `ci` steps                             |
+| `pnpm-workspace.yaml`                        | `allowBuilds` entries for dependencies that run install scripts                     |
+| `.github/workflows/ci.yml`                   | a job or step for the capability's authoritative check                              |
+| `.eph`                                       | a service block or environment variables                                            |
+| `.gitignore`                                 | an exception for a new repository skill under `.agents/skills` and `.claude/skills` |
+| `.nudge.yaml`                                | deterministic rules, each with fixtures in `tests/fixtures/nudge`                   |
+| `.bastion.yaml`                              | a single-concern reviewer when a semantic invariant needs judgment                  |
+| `AGENTS.md`                                  | one line in the check classification and any new invariants                         |
+| `.oxlintrc.json`, `.oxfmtrc.json`, `.ignore` | ignore patterns for generated files                                                 |
+| `tools/doctor.ts`                            | a probe for a new required tool                                                     |
+| `vitest.config.ts`                           | a project for tests that need an environment or a service                           |
+| `secrets/<env>.env`                          | every secret the capability's env schema requires (`pnpm secrets set`)              |

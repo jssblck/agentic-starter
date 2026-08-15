@@ -53,4 +53,6 @@ The Claude `SessionStart` hook and the Codex setup script fetch `origin/main`, i
 
 Never share a `node_modules` directory or a build output directory between worktrees by symlink.
 
+Shared agent skills are a dependency like any other: `pnpm install` installs the current `jssblck/agents` into the ignored `.agents/skills` and `.claude/skills` directories through `npx skills`, and `pnpm run skills:update` refreshes them. The CLI's `skills-lock.json` records what was installed but cannot pin it, so it is ignored rather than committed. Repository-specific skills (`bootstrap`, `using-eph`, and the like) stay tracked next to them.
+
 Secrets are sops-encrypted dotenv files committed per environment. Every checkout has them; the user-wide `agent` age key decrypts dev, and a gitignored per-checkout file elevates one worktree to prod. Production services hold only the `prod` key and decrypt at boot, so secrets ship with the commit that needs them. See [Secrets](secrets.md).

@@ -7,6 +7,8 @@
   "type": "module",
   "scripts": {
     "doctor": "node tools/doctor.ts",
+    "postinstall": "npx -y skills@1.5.22 add jssblck/agents -a claude-code -a codex -y",
+    "skills:update": "npx -y skills@1.5.22 update -y",
     "secrets": "node tools/secrets.ts",
     "dev": "eph up",
     "typecheck": "tsc --noEmit -p tsconfig.json",
