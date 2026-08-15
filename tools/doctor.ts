@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises'
+import { spawn } from 'node:child_process'
 import { join } from 'node:path'
 
 export interface ToolProbe {
@@ -22,14 +24,25 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-export function parseRequiredBun(packageJson: unknown): string {
+export function parseRequiredPnpm(packageJson: unknown): string {
   if (!isRecord(packageJson) || typeof packageJson['packageManager'] !== 'string') {
-    throw new Error('package.json packageManager must pin Bun as bun@X.Y.Z')
+    throw new Error('package.json packageManager must pin pnpm as pnpm@X.Y.Z')
   }
-  const match = /^bun@(\d+\.\d+\.\d+)$/.exec(packageJson['packageManager'])
-  const bun = match?.[1]
-  if (bun === undefined) throw new Error('package.json packageManager must pin Bun as bun@X.Y.Z')
-  return bun
+  const match = /^pnpm@(\d+\.\d+\.\d+)$/.exec(packageJson['packageManager'])
+  const pnpm = match?.[1]
+  if (pnpm === undefined) throw new Error('package.json packageManager must pin pnpm as pnpm@X.Y.Z')
+  return pnpm
+}
+
+export function parseRequiredNodeMajor(packageJson: unknown): number {
+  if (!isRecord(packageJson) || !isRecord(packageJson['engines'])) {
+    throw new Error('package.json engines.node must be set')
+  }
+  const node = packageJson['engines']['node']
+  const match = typeof node === 'string' ? /^>=(\d+)/.exec(node) : null
+  const major = match?.[1]
+  if (major === undefined) throw new Error('package.json engines.node must look like ">=24"')
+  return Number(major)
 }
 
 function detectedVersion(output: string): string | null {
@@ -59,28 +72,37 @@ export function assessProbe(tool: ToolProbe, result: ProbeOutput): ProbeAssessme
   return { state: 'ok', output: result.output, failed: false }
 }
 
-async function probe(tool: ToolProbe): Promise<ProbeOutput> {
-  try {
-    const process = Bun.spawn([...tool.command], { stdout: 'pipe', stderr: 'pipe' })
-    const [exitCode, stdout, stderr] = await Promise.all([
-      process.exited,
-      new Response(process.stdout).text(),
-      new Response(process.stderr).text(),
-    ])
-    const output = `${stdout}${stderr}`.trim().split('\n')[0] ?? ''
-    return { ok: exitCode === 0, output }
-  } catch (error) {
-    return { ok: false, output: error instanceof Error ? error.message : 'not found' }
-  }
+function probe(tool: ToolProbe): Promise<ProbeOutput> {
+  return new Promise((resolve) => {
+    const [command, ...args] = tool.command
+    if (command === undefined) {
+      resolve({ ok: false, output: 'no command' })
+      return
+    }
+    const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] })
+    let output = ''
+    child.stdout.on('data', (chunk: Buffer) => {
+      output += chunk.toString()
+    })
+    child.stderr.on('data', (chunk: Buffer) => {
+      output += chunk.toString()
+    })
+    child.on('error', (error) => resolve({ ok: false, output: error.message }))
+    child.on('close', (code) =>
+      resolve({ ok: code === 0, output: output.trim().split('\n')[0] ?? '' }),
+    )
+  })
 }
 
 async function main(): Promise<void> {
-  const root = join(import.meta.dir, '..')
-  const packageJson: unknown = JSON.parse(await Bun.file(join(root, 'package.json')).text())
-  const bun = parseRequiredBun(packageJson)
+  const root = join(import.meta.dirname, '..')
+  const packageJson: unknown = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'))
+  const pnpm = parseRequiredPnpm(packageJson)
+  const nodeMajor = parseRequiredNodeMajor(packageJson)
   const probes: readonly ToolProbe[] = [
     { name: 'git', command: ['git', '--version'], required: true },
-    { name: 'bun', command: ['bun', '--version'], required: true, expectedVersion: bun },
+    { name: 'node', command: ['node', '--version'], required: true },
+    { name: 'pnpm', command: ['pnpm', '--version'], required: true, expectedVersion: pnpm },
     { name: 'docker', command: ['docker', '--version'], required: false },
     { name: 'eph', command: ['eph', '--version'], required: true },
     { name: 'nudge', command: ['nudge', '--version'], required: false },
@@ -90,7 +112,15 @@ async function main(): Promise<void> {
   let failed = false
   for (const tool of probes) {
     const assessment = assessProbe(tool, await probe(tool))
-    console.log(`${assessment.state.padEnd(8)} ${tool.name.padEnd(10)} ${assessment.output}`)
+    let line = `${assessment.state.padEnd(8)} ${tool.name.padEnd(10)} ${assessment.output}`
+    if (tool.name === 'node' && assessment.state === 'ok') {
+      const major = Number(detectedVersion(assessment.output)?.split('.')[0])
+      if (major < nodeMajor) {
+        line = `mismatch node       ${assessment.output} (requires >=${nodeMajor})`
+        failed = true
+      }
+    }
+    console.log(line)
     if (assessment.failed) failed = true
   }
 
@@ -100,4 +130,4 @@ async function main(): Promise<void> {
   }
 }
 
-if (import.meta.main) await main()
+if (process.argv[1] !== undefined && import.meta.filename === process.argv[1]) await main()

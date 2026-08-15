@@ -1,39 +1,43 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 
-import { assessProbe, parseRequiredBun, type ToolProbe } from './doctor.ts'
+import { assessProbe, parseRequiredNodeMajor, parseRequiredPnpm, type ToolProbe } from './doctor.ts'
 
 describe('doctor requirements', () => {
-  test('reads the Bun pin from package.json', () => {
-    expect(parseRequiredBun({ packageManager: 'bun@1.3.14' })).toBe('1.3.14')
+  test('reads the pnpm pin from package.json', () => {
+    expect(parseRequiredPnpm({ packageManager: 'pnpm@11.21.0' })).toBe('11.21.0')
   })
 
-  test('rejects an unpinned Bun package manager', () => {
-    expect(() => parseRequiredBun({ packageManager: 'bun@latest' })).toThrow(
-      'package.json packageManager must pin Bun as bun@X.Y.Z',
+  test('rejects an unpinned package manager', () => {
+    expect(() => parseRequiredPnpm({ packageManager: 'pnpm@latest' })).toThrow(
+      'package.json packageManager must pin pnpm as pnpm@X.Y.Z',
     )
+  })
+
+  test('reads the Node major from engines', () => {
+    expect(parseRequiredNodeMajor({ engines: { node: '>=24' } })).toBe(24)
   })
 })
 
 describe('doctor probe assessment', () => {
-  const requiredBun: ToolProbe = {
-    name: 'bun',
-    command: ['bun', '--version'],
+  const requiredPnpm: ToolProbe = {
+    name: 'pnpm',
+    command: ['pnpm', '--version'],
     required: true,
-    expectedVersion: '1.3.14',
+    expectedVersion: '11.21.0',
   }
 
   test('accepts the pinned version', () => {
-    expect(assessProbe(requiredBun, { ok: true, output: '1.3.14' })).toEqual({
+    expect(assessProbe(requiredPnpm, { ok: true, output: '11.21.0' })).toEqual({
       state: 'ok',
-      output: '1.3.14',
+      output: '11.21.0',
       failed: false,
     })
   })
 
   test('rejects a different installed version', () => {
-    expect(assessProbe(requiredBun, { ok: true, output: '1.3.6' })).toEqual({
+    expect(assessProbe(requiredPnpm, { ok: true, output: '10.5.0' })).toEqual({
       state: 'mismatch',
-      output: '1.3.6 (requires 1.3.14)',
+      output: '10.5.0 (requires 11.21.0)',
       failed: true,
     })
   })

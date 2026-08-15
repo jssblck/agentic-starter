@@ -1,1 +1,1 @@
-bunx tsc --noEmit
+pnpm dlx shadcn@latest add button

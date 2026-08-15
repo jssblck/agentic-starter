@@ -1,3 +1,5 @@
+import { spawnSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 type ExpectedResult = 'Continue' | 'Interrupt' | 'Passthrough' | 'Substitute'
@@ -12,7 +14,7 @@ interface Fixture {
   readonly file?: string
 }
 
-const fixtureDirectory = join(import.meta.dir, '..', 'tests', 'fixtures', 'nudge')
+const fixtureDirectory = join(import.meta.dirname, '..', 'tests', 'fixtures', 'nudge')
 const fixtures: readonly Fixture[] = [
   {
     name: 'explicit any is blocked',
@@ -106,15 +108,15 @@ const fixtures: readonly Fixture[] = [
   },
   {
     name: 'npm run is substituted',
-    rule: 'use-bun-run',
+    rule: 'use-pnpm-run',
     expected: 'Substitute',
     input: 'content',
     fixture: 'bash-npm-run-positive.txt',
     tool: 'Bash',
   },
   {
-    name: 'bun run is unchanged',
-    rule: 'use-bun-run',
+    name: 'pnpm run is unchanged',
+    rule: 'use-pnpm-run',
     expected: 'Passthrough',
     input: 'content',
     fixture: 'bash-npm-run-negative.txt',
@@ -122,18 +124,34 @@ const fixtures: readonly Fixture[] = [
   },
   {
     name: 'npx is substituted',
-    rule: 'use-bunx',
+    rule: 'use-pnpm-dlx',
     expected: 'Substitute',
     input: 'content',
     fixture: 'bash-npx-positive.txt',
     tool: 'Bash',
   },
   {
-    name: 'bunx is unchanged',
-    rule: 'use-bunx',
+    name: 'pnpm dlx is unchanged',
+    rule: 'use-pnpm-dlx',
     expected: 'Passthrough',
     input: 'content',
     fixture: 'bash-npx-negative.txt',
+    tool: 'Bash',
+  },
+  {
+    name: 'bun install is substituted',
+    rule: 'use-pnpm-install',
+    expected: 'Substitute',
+    input: 'content',
+    fixture: 'bash-install-positive.txt',
+    tool: 'Bash',
+  },
+  {
+    name: 'pnpm install is unchanged',
+    rule: 'use-pnpm-install',
+    expected: 'Passthrough',
+    input: 'content',
+    fixture: 'bash-install-negative.txt',
     tool: 'Bash',
   },
 ]
@@ -142,23 +160,25 @@ for (const fixture of fixtures) {
   const fixturePath = join(fixtureDirectory, fixture.fixture)
   const command = ['nudge', 'test', '--rule', fixture.rule]
   if (fixture.input === 'prompt') {
-    const input = (await Bun.file(fixturePath).text()).trim()
+    const input = readFileSync(fixturePath, 'utf8').trim()
     command.push('--prompt', input)
   } else {
     if (fixture.tool === undefined) throw new Error(`${fixture.name} requires a tool`)
     command.push('--tool', fixture.tool)
     if (fixture.tool === 'Bash') {
-      command.push('--content', (await Bun.file(fixturePath).text()).trim())
+      command.push('--content', readFileSync(fixturePath, 'utf8').trim())
     } else {
       command.push('--content-file', fixturePath)
     }
     if (fixture.file !== undefined) command.push('--file', fixture.file)
   }
 
-  const result = Bun.spawnSync({ cmd: command, stdout: 'pipe', stderr: 'pipe' })
-  const output = `${new TextDecoder().decode(result.stdout)}${new TextDecoder().decode(result.stderr)}`
-  if (result.exitCode !== 0) {
-    throw new Error(`${fixture.name}: nudge test exited with ${result.exitCode}\n${output}`)
+  const [executable, ...args] = command
+  if (executable === undefined) throw new Error('empty command')
+  const result = spawnSync(executable, args, { encoding: 'utf8' })
+  const output = `${result.stdout}${result.stderr}`
+  if (result.status !== 0) {
+    throw new Error(`${fixture.name}: nudge test exited with ${result.status}\n${output}`)
   }
   if (!output.includes(`Result: ${fixture.expected}`)) {
     throw new Error(`${fixture.name}: expected ${fixture.expected}\n${output}`)

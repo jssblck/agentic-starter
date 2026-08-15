@@ -98,7 +98,7 @@ rules:
           - kind: Regex
             pattern: '(?m)^run=.+\n(?:[^\n\[]+\n)*port=[0-9]+$'
 
-  - name: use-bun-run
+  - name: use-pnpm-run
     description: Keep one JavaScript package-manager surface
     action: substitute
     on:
@@ -106,16 +106,27 @@ rules:
         tool: Bash
         command:
           - kind: Regex
-            pattern: '^npm run (?P<script>.+)$'
-            replace: 'bun run {{ $script }}'
+            pattern: '^(?:npm|yarn|bun) run (?P<script>.+)$'
+            replace: 'pnpm run {{ $script }}'
 
-  - name: use-bunx
-    description: Use Bun's package runner
+  - name: use-pnpm-dlx
+    description: Use pnpm's package runner
     action: substitute
     on:
       - hook: PreToolUse
         tool: Bash
         command:
           - kind: Regex
-            pattern: '^npx (?P<command>.+)$'
-            replace: 'bunx {{ $command }}'
+            pattern: '^(?:npx|bunx) (?P<command>.+)$'
+            replace: 'pnpm dlx {{ $command }}'
+
+  - name: use-pnpm-install
+    description: Keep one JavaScript package-manager surface
+    action: substitute
+    on:
+      - hook: PreToolUse
+        tool: Bash
+        command:
+          - kind: Regex
+            pattern: '^(?:npm|yarn|bun) (?P<verb>install|add|remove|i)(?P<rest>.*)$'
+            replace: 'pnpm {{ $verb }}{{ $rest }}'

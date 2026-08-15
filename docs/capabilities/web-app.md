@@ -9,7 +9,7 @@ Self-hosted on Node (Railway, a Docker host). Nothing here depends on Vercel.
 Run once, from the repository root:
 
 ```sh
-bunx create-next-app@latest apps/web --ts --app --tailwind --no-eslint --no-src-dir --import-alias "@/*" --use-bun --skip-install --turbopack --yes
+pnpm dlx create-next-app@latest apps/web --ts --app --tailwind --no-eslint --no-src-dir --import-alias "@/*" --use-pnpm --skip-install --turbopack --yes
 rm apps/web/README.md apps/web/CLAUDE.md
 ```
 
@@ -18,11 +18,11 @@ Then replace what it wrote: `apps/web/package.json` (name, exact pins from the t
 Then the UI kit:
 
 ```sh
-cd apps/web && bunx shadcn@latest init -b base -p nova --no-monorepo --no-pointer -y
-bunx shadcn@latest add button input textarea dialog
+cd apps/web && pnpm dlx shadcn@latest init -b base -p nova --no-monorepo --no-pointer -y
+pnpm dlx shadcn@latest add button input textarea dialog
 ```
 
-`-p` is required; without a preset the CLI prompts and an agent hangs. Do not pass `-t`; that creates a new project. `init` adds `shadcn`, `lucide-react`, and `tw-animate-css` as runtime dependencies (its `globals.css` imports `shadcn/tailwind.css`) and rewrites the root `tsconfig.json` formatting; run `bun run fmt` afterward.
+`-p` is required; without a preset the CLI prompts and an agent hangs. Do not pass `-t`; that creates a new project. `init` adds `shadcn`, `lucide-react`, and `tw-animate-css` as runtime dependencies (its `globals.css` imports `shadcn/tailwind.css`) and rewrites the root `tsconfig.json` formatting; run `pnpm run fmt` afterward.
 
 ## Packages
 
@@ -60,7 +60,7 @@ bunx shadcn@latest add button input textarea dialog
 | `@types/react-dom`                         | 19.2.4       | dev                                                                                                                                                              |
 | `@playwright/test`                         | 1.62.1       | root dev, for the smoke test                                                                                                                                     |
 
-Bun installs and runs tests; Node runs production. Next requires Node 20.9+; both 22 and 26 run the standalone output.
+Next requires Node 20.9+; the base pins 24 or later. This guide was verified with Bun as the installer. pnpm's isolated layout is what Next's own Docker example uses; if `outputFileTracingIncludes` needs more entries under pnpm, record them here.
 
 `apps/web/tsconfig.json` extends the root, sets `jsx: "preserve"`, `allowJs`, `incremental`, `plugins: [{ name: "next" }]`, `paths: { "@/*": ["./*"] }`, and includes `next-env.d.ts`, `**/*.ts`, `**/*.tsx`, `.next/types/**/*.ts`. The root `tsconfig.json` excludes `apps/web/**`.
 
@@ -93,7 +93,7 @@ const config: NextConfig = {
 
 Tailwind 4 with no config file: `postcss.config.mjs` contains `{ plugins: { '@tailwindcss/postcss': {} } }`, and `app/globals.css` starts with `@import 'tailwindcss'` followed by `@theme { ... }` tokens. Import it from the root layout.
 
-Base UI provides headless primitives. `bunx shadcn@latest init -b base` generates the kit into `components/ui` on Base UI and Tailwind; add components with `bunx shadcn@latest add <name>`. After copy the files are yours: edit them, do not re-generate over edits.
+Base UI provides headless primitives. `pnpm dlx shadcn@latest init -b base` generates the kit into `components/ui` on Base UI and Tailwind; add components with `pnpm dlx shadcn@latest add <name>`. After copy the files are yours: edit them, do not re-generate over edits.
 
 Invariants (add to `AGENTS.md`):
 
@@ -176,18 +176,18 @@ The [API server](api-server.md) guide adds one more for the route chain. Togethe
 
 ## Tests
 
-- `libs` and the mounted Hono app: `bun test`, in-process, no port.
-- Client components: `bun test` with happy-dom, rendering the component with its props. Do not render server components this way; Next documents that async server components are not unit-testable in Vitest or Jest either.
-- Server components, server actions, and routing: one Playwright smoke test in `tests/e2e` against the built standalone server. `playwright.config.ts` at the root uses `webServer` with the copy step and `node apps/web/.next/standalone/apps/web/server.js` (a monorepo standalone nests under `apps/web`). It runs in `ci`, not `check`. Locally, run `bunx playwright install --with-deps chromium` once; the browser needs system libraries.
+- `libs` and the mounted Hono app: Vitest, in-process, no port.
+- Client components: Vitest with happy-dom (`environment: "happy-dom"` on a `web` project in `vitest.config.ts`), rendering the component with its props. Do not render server components this way; Next documents that async server components are not unit-testable in Vitest or Jest either.
+- Server components, server actions, and routing: one Playwright smoke test in `tests/e2e` against the built standalone server. `playwright.config.ts` at the root uses `webServer` with the copy step and `node apps/web/.next/standalone/apps/web/server.js` (a monorepo standalone nests under `apps/web`). It runs in `ci`, not `check`. Locally, run `pnpm dlx playwright install --with-deps chromium` once; the browser needs system libraries.
 
 ## Hubs
 
-- `package.json`: `dev:web` (`bun run --cwd apps/web dev`), `build:web` (`bun run --cwd apps/web build`), `test:e2e` (`playwright test`). The flag order matters: `bun --cwd apps/web next build` cannot find `next`, and `bun --cwd apps/web run build` prints help. Add `build:web` and `test:e2e` to `ci`. Extend `typecheck` with `&& bun run --cwd apps/web next typegen && tsc --noEmit -p apps/web/tsconfig.json`; the `PageProps` and `LayoutProps` globals do not exist until typegen or a build has run.
-- `.eph`: `[web]` block with `run=bun run --cwd apps/web dev -- --port ${web.port}`, `role=app`, `port=auto`; `[env]` entry `WEB_URL=http://localhost:${web.port}` and, when the API is mounted, `<PREFIX>_API_URL=http://localhost:${web.port}`.
+- `package.json`: `dev:web` (`pnpm --filter @scope/web dev`), `build:web` (`pnpm --filter @scope/web build`), `test:e2e` (`playwright test`). Add `build:web` and `test:e2e` to `ci`. Extend `typecheck` with `&& pnpm --filter @scope/web exec next typegen && tsc --noEmit -p apps/web/tsconfig.json`; the `PageProps` and `LayoutProps` globals do not exist until typegen or a build has run.
+- `.eph`: `[web]` block with `run=pnpm --filter @scope/web dev -- --port ${web.port}`, `role=app`, `port=auto`; `[env]` entry `WEB_URL=http://localhost:${web.port}` and, when the API is mounted, `<PREFIX>_API_URL=http://localhost:${web.port}`.
 - `.oxlintrc.json`, `.oxfmtrc.json`, `.gitignore`: ignore `apps/web/.next/**` and `apps/web/next-env.d.ts`. Add an oxlint override for `apps/web/app/layout.tsx` turning off `import/no-unassigned-import` (the CSS import).
-- `.github/workflows/ci.yml`: `bunx playwright install --with-deps chromium` before `bun run ci`.
-- `AGENTS.md` check classification: "Web app: run the web tests and `bun run typecheck`. Run `bun run build:web` when routes, configuration, or dependencies change. Server-rendered behavior is covered by `test:e2e` in `ci`."
-- Docker (release capability): the official Next `with-docker` layout. Builder installs with Bun and runs `bun run build:web`; the runtime stage is `node:22-alpine` (or the pinned Node major), copies `apps/web/.next/standalone/` to `/app`, then `apps/web/public` to `/app/apps/web/public` and `apps/web/.next/static` to `/app/apps/web/.next/static`, sets `HOSTNAME=0.0.0.0` and `PORT`, and runs `node apps/web/server.js` from `/app` as a non-root user. `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` is a build arg.
+- `.github/workflows/ci.yml`: `pnpm dlx playwright install --with-deps chromium` before `pnpm run ci`.
+- `AGENTS.md` check classification: "Web app: run the web tests and `pnpm run typecheck`. Run `pnpm run build:web` when routes, configuration, or dependencies change. Server-rendered behavior is covered by `test:e2e` in `ci`."
+- Docker (release capability): the official Next `with-docker` layout. Builder installs with pnpm (`corepack enable && pnpm install --frozen-lockfile`) and runs `pnpm run build:web`; the runtime stage is `node:24-alpine` (or the pinned Node major), copies `apps/web/.next/standalone/` to `/app`, then `apps/web/public` to `/app/apps/web/public` and `apps/web/.next/static` to `/app/apps/web/.next/static`, sets `HOSTNAME=0.0.0.0` and `PORT`, and runs `node apps/web/server.js` from `/app` as a non-root user. `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` is a build arg.
 
 ## What is not here
 

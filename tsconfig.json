@@ -2,10 +2,12 @@
   "compilerOptions": {
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "target": "ESNext",
-    "module": "Preserve",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "moduleDetection": "force",
-    "moduleResolution": "Bundler",
     "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
     "strict": true,
@@ -20,8 +22,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["bun"]
+    "types": ["node"]
   },
-  "include": ["apps/**/*.ts", "libs/**/*.ts", "tools/**/*.ts", "tests/**/*.ts"],
+  "include": ["apps/**/*.ts", "libs/**/*.ts", "tools/**/*.ts", "tests/**/*.ts", "vitest.config.ts"],
   "exclude": ["**/node_modules/**", "dist/**"]
 }

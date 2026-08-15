@@ -4,7 +4,7 @@ name = "agentic-starter"
 [setup]
 script = '''
 git fetch --force origin refs/heads/main:refs/remotes/origin/main
-bun install --frozen-lockfile
+pnpm install --frozen-lockfile
 eph up
 '''
 
@@ -19,4 +19,4 @@ command = "eph up"
 [[actions]]
 name = "Check"
 icon = "tool"
-command = "bun run check"
+command = "pnpm run check"

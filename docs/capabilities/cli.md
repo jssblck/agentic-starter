@@ -4,7 +4,7 @@ Incur defines commands, options, environment variables, help, version, and struc
 
 ## Packages
 
-- `apps/cli`: `cli.ts` exports `createCli(dependencies)` and a default `Cli` instance; `main.ts` is the executable entrypoint and only calls `cli.serve()`. Keep them separate: a Bun entrypoint that default-exports an object with a `fetch` handler auto-starts a server, and Incur's `Cli` has one.
+- `apps/cli`: `cli.ts` exports `createCli(dependencies)` and a default `Cli` instance; `main.ts` is the executable entrypoint and only calls `cli.serve()`. Keep them separate: Bun (the compile target) auto-starts a server when an entrypoint default-exports an object with a `fetch` handler, and Incur's `Cli` has one.
 
 ## Dependencies
 
@@ -27,8 +27,8 @@ Add `"bin": { "<name>": "./src/main.ts" }` to `apps/cli/package.json`.
 
 ## Hubs
 
-- `package.json`: add `"cli": "bun apps/cli/src/main.ts"`.
-- `.eph`: only if the Fetch surface is used: a `[<name>]` block with `run=bun apps/cli/src/main.ts serve`, `role=app`, `port=auto`, `env.PORT=${<name>.port}`.
+- `package.json`: add `"cli": "node apps/cli/src/main.ts"`. Development runs the CLI on Node; only the release capability compiles it with Bun.
+- `.eph`: only if the Fetch surface is used: a `[<name>]` block with `run=node --watch apps/cli/src/main.ts serve`, `role=app`, `port=auto`, `env.PORT=${<name>.port}`.
 - `AGENTS.md` invariants: "Define commands, options, environment variables, help, and version handling with Incur in `apps`. Keep Incur definitions in `cli.ts` and executable entrypoints in `main.ts`."
 
 ## Distribution

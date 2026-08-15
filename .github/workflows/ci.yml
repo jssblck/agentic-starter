@@ -14,21 +14,23 @@ concurrency:
 
 jobs:
   ci:
-    name: bun run ci
+    name: pnpm run ci
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: oven-sh/setup-bun@v2
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v7
         with:
-          bun-version: 1.3.14
+          node-version: 24
+          cache: pnpm
       - name: Install Nudge
         run: curl -sSfL https://raw.githubusercontent.com/attunehq/nudge/main/scripts/install.sh | bash
       - name: Install Bastion
         run: curl -sSfL https://raw.githubusercontent.com/jssblck/bastion/main/scripts/install.sh | bash
       - name: Install eph
         run: curl -sSfL https://raw.githubusercontent.com/attunehq/doteph/main/scripts/install.sh | bash
-      - run: bun install --frozen-lockfile
-      - run: bun run ci
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run ci

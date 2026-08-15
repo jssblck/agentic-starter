@@ -22,13 +22,13 @@ The conclusion was not that Rust's guarantees stopped mattering. Protection agai
 
 Every choice below is that one trade, applied somewhere specific.
 
-## Bun and TypeScript for the high-churn path
+## TypeScript on Node for the high-churn path
 
 Coding agents are unusually effective in TypeScript. The language has a huge body of training examples, expressive structural types, tagged unions, and fast tooling, so an agent gets useful compiler feedback without waiting for a native build. TypeScript 7 moved the compiler to a native Go implementation, and Oxlint and Oxfmt bring the same native speed to linting and formatting.
 
-TypeScript was historically a poor fit for CLI work: it meant asking users to install Node, accepting awkward packaging and startup behavior, and living with module-resolution complexity. Bun changes that tradeoff. It bundles the runtime, application code, dependencies, assets, and native Node-API addons into a standalone executable, so a TypeScript CLI still ships as one download per platform.
+The runtime is Node. An earlier version of this template ran everything on Bun for its speed and single-binary CLIs, and the servers, workers, and test suites kept hitting edge cases: a socket bug that corrupted concurrent Postgres traffic, framework test matrices that only cover Node, and install-layout differences that broke bundlers. Node 24 runs TypeScript directly (type stripping, no build step for tools or tests), so the speed argument for a second runtime shrank to almost nothing while the compatibility cost stayed. pnpm installs with an isolated `node_modules` and hard-links from a content-addressable store, which is the property worktrees need. Vitest runs the tests.
 
-There is a useful inversion hiding in that model. Bun's maintainers pay the expensive native compilation cost once, for the runtime. A derived project consumes the runtime as a prebuilt artifact and compiles only product-level TypeScript in ordinary worktrees.
+Bun still has one job: shipped CLIs. It bundles the runtime, application code, dependencies, assets, and native Node-API addons into a standalone executable, so a TypeScript CLI still ships as one download per platform without asking users to install Node. Only the release capability touches it. Everything else, including the CLI's tests, runs on Node.
 
 TypeScript is less sound than Rust, so the base compensates with a restricted dialect and layered checks: strict compiler options, type-aware linting, exhaustive state modeling, and rules against type-system escape hatches. External values stay `unknown` until a runtime decoder proves their shape. The goal is a default path strongly typed enough that agents naturally produce acceptable code, not a pretense that TypeScript has become Rust.
 
@@ -46,7 +46,7 @@ The base ships no Rust. `docs/capabilities/rust-native.md` describes the shape w
 
 ## One monorepo, one worktree per agent
 
-A Bun workspace lives in one repository because a boundary change may need to touch several packages, schemas, tests, and packaging atomically. Splitting that across repositories surfaces integration failures later and makes each branch less coherent.
+A pnpm workspace lives in one repository because a boundary change may need to touch several packages, schemas, tests, and packaging atomically. Splitting that across repositories surfaces integration failures later and makes each branch less coherent.
 
 Each agent gets a complete Git worktree. Branch-sensitive state (dependency links, compiler output, databases, volumes, ports) stays isolated per worktree; immutable package contents may be shared. Fixed ports and a shared database are intolerable once several agents run full stacks concurrently, so eph declares the environment once and assigns each worktree its own data and ports. An agent never has to coordinate port numbers, copy environment files, or invent Docker commands before it can test a branch.
 
@@ -56,7 +56,7 @@ The web default is Next.js App Router, self-hosted on Node, with Base UI primiti
 
 The API default is Hono. When the product has no browser it runs standalone on Node; when it has a browser and other clients, it mounts inside the Next app under `/api` as a two-line route handler. Its route chain yields a typed client for free, so a CLI or a service is checked against the routes at typecheck time, and OpenAPI is one adapter away when a non-TypeScript client appears. The browser does not use that API. It uses server actions and server components, which form a private surface that can change with the UI, while the mounted API is the deliberate contract other clients depend on. Both surfaces call the same `libs`; a Bastion reviewer can watch for a feature that lands in one and not the other.
 
-Two things this design gives up. The production runtime is Node rather than Bun, because Next is built and tested against Node; Bun stays the package manager and test runner. And async server components have no unit-test story in any runner, so server-rendered behavior is covered by a Playwright smoke test in `ci` while `libs`, Hono routes, and client components stay under `bun test`.
+One thing this design gives up: async server components have no unit-test story in any runner, so server-rendered behavior is covered by a Playwright smoke test in `ci` while `libs`, Hono routes, and client components stay under Vitest.
 
 Nothing here depends on Vercel. Standalone output runs as one Node process; edge runtimes, per-function timeouts, and platform caches do not enter the picture. Elysia and Eden were the previous default and were dropped: Elysia's type-level machinery produced opaque errors, and it has a fraction of Hono's training footprint.
 

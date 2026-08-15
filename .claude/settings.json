@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "git fetch --force origin refs/heads/main:refs/remotes/origin/main && bun install --frozen-lockfile && eph up"
+            "command": "git fetch --force origin refs/heads/main:refs/remotes/origin/main && pnpm install --frozen-lockfile && eph up"
           }
         ]
       }
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun tools/claude-worktree-remove.ts"
+            "command": "node tools/claude-worktree-remove.ts"
           }
         ]
       }

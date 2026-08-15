@@ -4,7 +4,7 @@ Hono serves JSON over HTTP. Its route chain produces an `AppType` that `hc<AppTy
 
 Hono runs in two places, and the code is the same:
 
-- **Standalone on Node**, when there is no web UI. `apps/server` starts it.
+- **Standalone**, when there is no web UI. `apps/server` starts it on Node.
 - **Mounted inside the Next.js app** (see [Web app](web-app.md)), when there is a UI and other clients too. The route file in `app/api/[[...route]]/route.ts` delegates to it. The browser does not use this API; it uses server actions and server components. Non-browser clients use this API.
 
 Either way the Hono app lives in `libs/api` and is constructed with injected dependencies.
@@ -49,15 +49,15 @@ Keep the `hono` version identical across workspaces; RPC types break across mism
 
 ## Tests
 
-- Route tests: `app.request('/api/v1/things', { method: 'POST', body, headers })` with in-memory dependencies, under `bun test`. Or `testClient(app)` from `hono/testing` for typed calls.
+- Route tests: `app.request('/api/v1/things', { method: 'POST', body, headers })` with in-memory dependencies, under Vitest. Or `testClient(app)` from `hono/testing` for typed calls.
 - Client tests: build the client with `fetch: (input, init) => Promise.resolve(app.fetch(new Request(input, init)))` so route construction, serialization, and error conversion are covered without a port. The `Promise.resolve` matters: `app.fetch` and `app.request` return `Response | Promise<Response>`, which does not satisfy `typeof fetch`.
 - `apps/server/src/main.test.ts`: environment parsing and wiring only.
 
 ## Hubs
 
-- `package.json`: standalone only: `dev:server` (`bun --hot apps/server/src/main.ts`), `build:server` (`bun build apps/server/src/main.ts --target=node --outfile=dist/server.js`).
-- `.eph`: standalone only: `[server]` block with `run=bun --hot apps/server/src/main.ts`, `role=app`, `port=auto`, `env.PORT=${server.port}`; `[env]` entry `<PREFIX>_API_URL=http://localhost:${server.port}`. Mounted: the Next dev server already serves `/api`; point `<PREFIX>_API_URL` at it.
-- `AGENTS.md` check classification: "API contract: change the route chain in `libs/api`, then run the API tests and `bun run typecheck` so every `hc` caller is checked."
+- `package.json`: standalone only: `dev:server` (`node --watch apps/server/src/main.ts`), `start:server` (`node apps/server/src/main.ts`). Node runs the TypeScript source directly in every environment; the container image copies the pruned workspace instead of a bundle (release capability).
+- `.eph`: standalone only: `[server]` block with `run=node --watch apps/server/src/main.ts`, `role=app`, `port=auto`, `env.PORT=${server.port}`; `[env]` entry `<PREFIX>_API_URL=http://localhost:${server.port}`. Mounted: the Next dev server already serves `/api`; point `<PREFIX>_API_URL` at it.
+- `AGENTS.md` check classification: "API contract: change the route chain in `libs/api`, then run the API tests and `pnpm run typecheck` so every `hc` caller is checked."
 - `AGENTS.md` invariants: "Chain Hono routes; never call `app.get` as a statement. Pass an explicit status to every `c.json`. Only `libs/api` imports `hono`'s server side; callers import the client."
 
 ## Bastion reviewer

@@ -1,7 +1,7 @@
 # Dependencies
 node_modules/
 
-# Bun and TypeScript build output
+# Build output
 dist/
 build/
 coverage/

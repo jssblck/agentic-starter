@@ -1,0 +1,48 @@
+# Observability
+
+LogTape for structured logs, OpenTelemetry for traces, Sentry for errors. Libraries log through namespaced loggers and configure nothing; each process configures once at boot and decides where records go.
+
+## Dependencies
+
+| Package                                                                                                           | Version | Where                                          |
+| ----------------------------------------------------------------------------------------------------------------- | ------- | ---------------------------------------------- |
+| `@logtape/logtape`                                                                                                | 2.3.1   | every `libs/*` that logs, every `apps/*`       |
+| `@logtape/pretty`                                                                                                 | 2.3.1   | `apps/*`, development sink                     |
+| `@logtape/otel`                                                                                                   | 2.3.1   | `apps/*`, production sink                      |
+| `@logtape/hono`                                                                                                   | 2.3.1   | `libs/api`, request logging with request ids   |
+| `@logtape/drizzle-orm`                                                                                            | 2.3.1   | `libs/db`, query logging when wanted           |
+| `@logtape/testing-vitest`                                                                                         | 2.3.1   | dev, assert on log records in tests            |
+| `@vercel/otel`                                                                                                    | 2.1.3   | `apps/web`; works self-hosted, per Next's docs |
+| `@opentelemetry/sdk-node`, `@opentelemetry/auto-instrumentations-node`, `@opentelemetry/exporter-trace-otlp-http` | current | `apps/server`, `apps/worker`                   |
+| `@hono/otel`                                                                                                      | 1.1.2   | `libs/api`, one server span per request        |
+| `@sentry/nextjs`                                                                                                  | 10.70.0 | `apps/web`, optional                           |
+
+LogTape core has zero dependencies and one maintainer. The sinks pull their own dependencies (`@logtape/otel` brings the OpenTelemetry SDK).
+
+## Logging
+
+- Every library: `const logger = getLogger(['<project>', '<lib>'])` at module scope. Never `configure()` in a library.
+- Message form: `logger.info('Created note {noteId} for {orgId}', { noteId, orgId })`. Placeholders become structured properties. Do not use tagged template literals; they carry no structure. Do not interpolate values into the message string.
+- Every process calls `configure()` once at boot, in `apps/*/src/main.ts` (Hono server, worker) or `instrumentation.ts` `register()` (Next, server side). A second `configure()` throws; in Next dev with hot reload use `configure({ reset: true, ... })`. Multi-bundle behavior is not documented by LogTape; treat "once per process, reset in dev" as the rule and report anything stranger.
+- Sinks: `getPrettyFormatter` to console in development; `getOpenTelemetrySink({ serviceName })` in production, which ships records over OTLP logs. With no OTLP endpoint configured that sink silently drops everything; also keep a plain console sink in production so `docker logs` is never empty.
+- Request ids: `configure({ contextLocalStorage: new AsyncLocalStorage(), ... })` (required on Node for implicit context, and silently ignored without it), then `@logtape/hono` middleware with `context: true` reads or generates `x-request-id`, echoes it, and attaches `requestId` to every record in the request. In Next, wrap server action bodies with `withContext({ requestId })` where it matters. In the worker, `withContext({ jobId, jobName })` around each handler.
+- Redaction: `@logtape/redaction` for known secret-shaped fields if logs leave the box. Better: never log request bodies or tokens.
+- Levels: `debug` for developer detail, `info` for one line per unit of work, `warning` for handled anomalies, `error` for failures with the error object as a property. Category-level filters in `configure()`, not `if` statements at call sites.
+
+## Tracing
+
+- Next: `apps/web/instrumentation.ts` with `export function register() { registerOTel({ serviceName }) }` from `@vercel/otel`. That covers route rendering, server actions, and fetch spans. `NEXT_OTEL_VERBOSE=1` for more spans; `NEXT_OTEL_FETCH_DISABLED=1` to drop fetch spans.
+- Hono standalone and worker: `NodeSDK` from `@opentelemetry/sdk-node` started before anything else imports `pg`, with the OTLP HTTP trace exporter and auto-instrumentations for `pg` and `http`. `@hono/otel`'s `httpInstrumentationMiddleware` for the request span; it does not set up a provider itself.
+- Export target: whatever the platform ingests over OTLP (Railway supports an OTLP collector; a bare server runs one). Configure with the standard `OTEL_EXPORTER_OTLP_ENDPOINT` and `OTEL_SERVICE_NAME` variables so no code changes between environments.
+- Correlation: `@logtape/otel` attaches the active trace and span ids to each log record when a provider is registered.
+
+## Errors
+
+`@sentry/nextjs` supports Next 16 and Turbopack. Add it when a product has users; the wizard's config is fine, source maps upload by default under Turbopack. For the worker and standalone server, `@sentry/node`. Sentry and OTLP traces overlap; if both are on, let Sentry sample errors and OTel own performance.
+
+## Hubs
+
+- `env` module: `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, `LOG_LEVEL`, `SENTRY_DSN` (optional).
+- `.eph` `[env]`: `LOG_LEVEL=debug`; no OTLP endpoint locally unless a collector is running.
+- `AGENTS.md` invariants: "Log through `getLogger([...])` with placeholder properties. Configure sinks only in an app entrypoint. Never log tokens, secrets, or request bodies."
+- `.oxlintrc.json`: consider `@logtape/lint` rules if the project standardizes on them; otherwise `no-console` error outside `tools/`.

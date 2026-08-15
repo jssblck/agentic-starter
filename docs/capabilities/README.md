@@ -2,7 +2,7 @@
 
 The base repository ships no application code. Each document in this directory describes one capability that a derived project can add: the packages, dependencies, shared-hub edits, invariants, and checks it needs. The `bootstrap` skill runs the interview that selects capabilities and applies these guides in dependency order.
 
-The CLI, PostgreSQL, Rust, and release guides were written from a working implementation this repository once carried. The web app and API server guides were written from verified upstream documentation in August 2026 and then corrected against a throwaway build (Next 16.3, Hono 4.13, Node 22 and 26) that exercised install, typecheck, build, standalone boot, the mounted API, and server actions. Nothing in the base verifies any guide, so treat pinned versions as the last known-good set and confirm each against its registry before installing. When a guide proves wrong, fix the guide in the same changeset as the code.
+The CLI, PostgreSQL, Rust, and release guides were written from a working implementation this repository once carried. The web app and API server guides were written from verified upstream documentation in August 2026 and then corrected against a throwaway build (Next 16.3, Hono 4.13, Node 22 and 26) that exercised install, typecheck, build, standalone boot, the mounted API, and server actions. The worker, auth, observability, and environment guides were written from upstream documentation and package registries in August 2026 without a throwaway. All of them predate the move from Bun to pnpm and Node; the commands were translated, the behavior was not re-verified. Nothing in the base verifies any guide, so treat pinned versions as the last known-good set and confirm each against its registry before installing. When a guide proves wrong, fix the guide in the same changeset as the code.
 
 ## Order
 
@@ -14,11 +14,15 @@ Pick the backend shape first. The interview question is who calls it.
 
 Then add the rest in this order. Each depends only on the ones before it.
 
-1. [Web app](web-app.md) and/or [API server](api-server.md).
-2. [CLI](cli.md): Incur command-line entrypoint, usually a client of the API.
-3. [PostgreSQL](postgres.md): Drizzle schema, immutable migrations, worktree-local database.
-4. [Rust and Node-API](rust-native.md): pure Rust crate behind a thin native adapter.
-5. [Release](release.md): Git-tag versioning, standalone CLI binaries, container images.
+1. [Environment](env.md): typed `process.env` decoding at boot. Every process needs it; apply it with the first surface.
+2. [Web app](web-app.md) and/or [API server](api-server.md).
+3. [CLI](cli.md): Incur command-line entrypoint, usually a client of the API.
+4. [PostgreSQL](postgres.md): Drizzle schema, immutable migrations, worktree-local database.
+5. [Worker](worker.md): pg-boss jobs in Postgres, executed by a separate Node process.
+6. [Auth and billing](auth.md): Clerk sessions, organizations, machine tokens, and Stripe billing through Clerk.
+7. [Observability](observability.md): LogTape logs, OpenTelemetry traces, Sentry errors.
+8. [Rust and Node-API](rust-native.md): pure Rust crate behind a thin native adapter.
+9. [Release](release.md): Git-tag versioning, standalone CLI binaries, container images.
 
 ## Shared hubs
 
@@ -34,3 +38,5 @@ Every capability touches some of these files. Edit each with the `mergeable-edit
 | `AGENTS.md`                                  | one line in the check classification and any new invariants        |
 | `.oxlintrc.json`, `.oxfmtrc.json`, `.ignore` | ignore patterns for generated files                                |
 | `tools/doctor.ts`                            | a probe for a new required tool                                    |
+| `vitest.config.ts`                           | a project for tests that need an environment or a service          |
+| `.env.example`                               | every variable the capability's env schema requires                |

@@ -5,20 +5,20 @@ This repository is optimized for several coding agents working in separate Git w
 ## Read first
 
 1. Read `docs/architecture.md` before editing.
-2. Run `bun run doctor` to see which local tools are available.
+2. Run `pnpm run doctor` to see which local tools are available.
 3. Run `eph up` only when the task needs local services. Every worktree gets isolated containers and ports.
 4. On a fresh clone with no application code, use the `bootstrap` skill.
 
 ## Checks
 
-- `bun run check` is the fast loop: format, lint, typecheck, unit tests. Run it after every coherent edit.
-- `bun run ci` is the full gate: `check` plus policy validation and every capability's authoritative check. Run it before opening a pull request. CI runs the same command.
+- `pnpm run check` is the fast loop: format, lint, typecheck, unit tests. Run it after every coherent edit.
+- `pnpm run ci` is the full gate: `check` plus policy validation and every capability's authoritative check. Run it before opening a pull request. CI runs the same command.
 - Capabilities add steps to `ci`, not to `check`, unless the step finishes in seconds without external services or toolchains.
 
 Classify the change so you run only what it needs:
 
-- TypeScript-only: `bun run check`.
-- Policy (`.nudge.yaml`, `.bastion.yaml`, `.eph`, hooks): `bun run policy:check`.
+- TypeScript-only: `pnpm run check`.
+- Policy (`.nudge.yaml`, `.bastion.yaml`, `.eph`, hooks): `pnpm run policy:check`.
 - Capability-specific classifications are appended here by the capability guides in `docs/capabilities`.
 
 ## TypeScript invariants

@@ -10,15 +10,15 @@ A change that spans several packages belongs in one worktree and one commit seri
 
 ## What the hooks do
 
-Claude Code's `SessionStart` hook and Codex's setup script run the same three steps: fetch `origin/main`, `bun install --frozen-lockfile`, `eph up`. They stop when any step fails. They do not rebase the branch; look at the branch, then decide.
+Claude Code's `SessionStart` hook and Codex's setup script run the same three steps: fetch `origin/main`, `pnpm install --frozen-lockfile`, `eph up`. They stop when any step fails. They do not rebase the branch; look at the branch, then decide.
 
 Both tools copy the ignored files listed in `.worktreeinclude` (`.env`) into a new worktree. Neither copies `node_modules`.
 
 `WorktreeRemove` and Codex cleanup run `eph clean`, which removes the worktree's containers, volumes, and saved eph state.
 
-## Bun state
+## Dependency state
 
-Each checkout has its own `node_modules` link graph. `bunfig.toml` selects the isolated linker so an undeclared dependency does not resolve through a sibling package, and hard-links package files from Bun's install cache so worktrees share bytes. Do not enable `globalStore`: it replaces the hard links with symlinks into `~/.bun`, which Turbopack rejects as outside the project root. Never symlink one mutable `node_modules` into another checkout.
+Each checkout has its own `node_modules` link graph. `.npmrc` selects pnpm's isolated linker so an undeclared dependency does not resolve through a sibling package. pnpm hard-links package files from its content-addressable store, so worktrees share bytes while `node_modules/.pnpm` stays inside the project root, which is what Turbopack requires. Never symlink one mutable `node_modules` into another checkout.
 
 Verify dependency changes with a fresh clone. The live checkout's link graph can predate the change and hide a missing declaration that CI will catch.
 

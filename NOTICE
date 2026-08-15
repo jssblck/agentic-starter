@@ -1,7 +1,7 @@
 Agentic Starter
 Copyright 2026 The Agentic Starter contributors
 
-This template integrates with independently licensed tools, including Bun,
+This template integrates with independently licensed tools, including Node.js, pnpm,
 TypeScript, Oxlint, Oxfmt, Nudge, Bastion, and eph, and its capability guides
 reference further libraries. Their names and links are used for attribution and
 do not imply endorsement. Review dependency licenses before distributing a

@@ -6,8 +6,8 @@ The optimization target is guardrails per second across several speculative work
 
 The base therefore contains only what every derived project keeps:
 
-- Bun and TypeScript as the control plane, with a strict compiler configuration and type-aware linting.
-- One fast check (`bun run check`) and one full gate (`bun run ci`).
+- Node.js, pnpm, and TypeScript as the control plane, with a strict compiler configuration, type-aware linting, and Vitest. Node runs TypeScript directly, so the base has no build step.
+- One fast check (`pnpm run check`) and one full gate (`pnpm run ci`).
 - Nudge for deterministic policy at write time, Bastion for semantic review after a changeset exists.
 - eph for worktree-local services with assigned ports.
 - Agent hooks that make a fresh worktree usable without human setup.
@@ -22,7 +22,7 @@ apps/*  ---> libs/*  ---> external systems
 
 `apps` are entrypoints. Each owns one surface (process, HTTP, DOM), parses input from it, constructs dependencies, calls a library, and renders the result back to that surface. They contain no business logic and are tested only for parsing and wiring.
 
-`libs` hold dependency-injected workflows and domain types. They are tested at Bun test speed with in-memory implementations of their dependencies. A library that talks to an external system (database, native addon, network) owns that boundary and decodes what crosses it.
+`libs` hold dependency-injected workflows and domain types. They are tested with Vitest and in-memory implementations of their dependencies. A library that talks to an external system (database, native addon, network) owns that boundary and decodes what crosses it.
 
 Nothing in `libs` imports from `apps`. Nothing outside a boundary library touches the raw external interface.
 
@@ -39,7 +39,7 @@ Prefer tagged unions with exhaustive switches for lifecycle states, branded type
 | Nudge             | before a write, and in CI | mechanically decidable violations: escape hatches, fixed ports, wrong package manager |
 | TypeScript        | `check`                   | shape and exhaustiveness                                                              |
 | Oxlint            | `check`                   | unsafe operations, unhandled promises, import hygiene                                 |
-| Bun tests         | `check`                   | behavior, with in-memory dependencies                                                 |
+| Vitest            | `check`                   | behavior, with in-memory dependencies                                                 |
 | Capability checks | `ci`                      | migrations, native builds, release matrices, integration                              |
 | Bastion           | after a changeset         | semantic invariants a rule cannot express                                             |
 
@@ -47,7 +47,7 @@ A Nudge rule must be true or false with no judgment. Anything that needs judgmen
 
 ## Worktrees
 
-Each agent works in one complete Git worktree. Branch-sensitive state (dependency links, build output, databases, ports) is per worktree; immutable package bytes are hard-linked from Bun's install cache, so worktrees share them without a shared `node_modules`. `bunfig.toml` selects the isolated linker so an undeclared dependency fails locally the way it fails in a fresh clone.
+Each agent works in one complete Git worktree. Branch-sensitive state (dependency links, build output, databases, ports) is per worktree; immutable package bytes are hard-linked from pnpm's content-addressable store, so worktrees share them without a shared `node_modules`. `.npmrc` selects the isolated linker so an undeclared dependency fails locally the way it fails in a fresh clone.
 
 The Claude `SessionStart` hook and the Codex setup script fetch `origin/main`, install locked dependencies, and start eph services. They do not rebase; that decision belongs to the agent once it has looked at the branch. `WorktreeRemove` and Codex cleanup run `eph clean` so a removed worktree takes its containers and volumes with it.
 

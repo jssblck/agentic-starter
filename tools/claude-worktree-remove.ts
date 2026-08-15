@@ -1,20 +1,19 @@
+import { spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { isAbsolute, join, normalize } from 'node:path'
 
-const hookInput: unknown = await Bun.stdin.json()
+let raw = ''
+for await (const chunk of process.stdin) raw += chunk
+const hookInput: unknown = JSON.parse(raw)
 const worktreePath = parseWorktreePath(hookInput)
 
 if (!existsSync(join(worktreePath, '.eph'))) {
   process.exit(0)
 }
 
-const cleanup = Bun.spawnSync(['eph', 'clean'], {
-  cwd: worktreePath,
-  stdout: 'inherit',
-  stderr: 'inherit',
-})
+const cleanup = spawnSync('eph', ['clean'], { cwd: worktreePath, stdio: 'inherit' })
 
-process.exit(cleanup.exitCode)
+process.exit(cleanup.status ?? 1)
 
 function parseWorktreePath(value: unknown): string {
   if (
