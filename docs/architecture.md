@@ -2,60 +2,53 @@
 
 ## Design objective
 
-The primary optimization target is guardrails per second across several speculative worktrees. The repository keeps high-churn product logic in TypeScript, retains Rust for a narrow capability where its guarantees matter, and prevents ordinary TypeScript edits from rebuilding the native graph.
+The optimization target is guardrails per second across several speculative worktrees. Agents multiply every feedback loop across every branch, so feedback that arrives before or during an edit, from a check that finishes in seconds, is the target.
 
-Bun and TypeScript are the permanent control plane for projects derived from this starter. The Rust, native, database, HTTP, CLI, worktree-service, and release layers are worked examples that an agent may remove as complete capability units.
+The base therefore contains only what every derived project keeps:
 
-## Dependency direction
+- Bun and TypeScript as the control plane, with a strict compiler configuration and type-aware linting.
+- One fast check (`bun run check`) and one full gate (`bun run ci`).
+- Nudge for deterministic policy at write time, Bastion for semantic review after a changeset exists.
+- eph for worktree-local services with assigned ports.
+- Agent hooks that make a fresh worktree usable without human setup.
+
+Application code, persistence, native code, and distribution are capabilities a project adds through `docs/capabilities`.
+
+## Shape of a derived project
 
 ```text
-apps/cli -------> libs/api (Eden client) -------> HTTP API
-   |
-   +-----------> libs/native -------> todo-parser-napi -------> todo-parser
-
-apps/web -------> libs/api (Eden client) -------> HTTP API
-
-apps/server ----> libs/api (Elysia factory)
-   |
-   +-----------> libs/db ----------> PostgreSQL
-   +-----------> libs/native -------> todo-parser-napi -------> todo-parser
-   +-----------> libs/version
-
-libs/api + libs/db + libs/native + apps ----> libs/domain (shared todo types)
+apps/*  ---> libs/*  ---> external systems
 ```
 
-The diagram shows the example instance of the permanent shape. The rules below are the permanent invariants; the todo package names that express them belong to the example and are renamed or deleted with their capabilities.
+`apps` are entrypoints. Each owns one surface (process, HTTP, DOM), parses input from it, constructs dependencies, calls a library, and renders the result back to that surface. They contain no business logic and are tested only for parsing and wiring.
 
-Rules:
+`libs` hold dependency-injected workflows and domain types. They are tested at Bun test speed with in-memory implementations of their dependencies. A library that talks to an external system (database, native addon, network) owns that boundary and decodes what crosses it.
 
-1. `todo-parser` is pure Rust. It has no Bun, Node-API, HTTP, or database concerns.
-2. `todo-parser-napi` translates errors and serialization. It contains no domain parsing logic.
-3. `apps` contain entrypoint boundaries only: Incur command and environment schemas, dependency construction, library calls, and surface-oriented output. Incur parses process input and formats command results; only TODO text crosses into the Rust parser.
-4. `libs/api` owns the dependency-injected Elysia factory and its Eden client facade. The exported `App` type keeps their HTTP calls aligned without code generation.
-5. `libs/native` is the only TypeScript package that loads `.node` code. Its output decoder treats the addon as untrusted.
-6. `libs/db` owns Drizzle and raw database access. Applications depend on `TodoRepository`.
-7. `libs/version` supplies one build identity to every TypeScript surface; Rust receives the same identity through its build script.
-8. `libs/domain` owns the shared domain types and their type guards. Every application package may depend on it; it depends only on `libs/version`.
-9. `apps/web` reaches the server only through the shared Eden client over HTTP. The server serves its compiled assets in production and never imports from it.
+Nothing in `libs` imports from `apps`. Nothing outside a boundary library touches the raw external interface.
 
-## HTTP and native boundaries
+## Boundaries and trust
 
-The CLI and server share an inferred Elysia contract at build time, but the compiled CLI still crosses a real HTTP boundary through Eden Treaty. Runtime OpenAPI remains available for people and tools that need to inspect a running server.
+Static types cannot prove external bytes. Every value that enters from the environment, the network, a database driver, or a native addon is `unknown` until a decoder in the owning library proves its shape. Keep the unsafe interop in one named file and make the resulting interface smaller than the library it wraps.
 
-The API is mounted under `/api` so the server can serve the compiled web app same-origin without route collisions. Unknown non-API paths fall back to the SPA's `index.html`; missing API routes return 404 instead of HTML.
+Prefer tagged unions with exhaustive switches for lifecycle states, branded types when two strings mean different things, and constructors that make invalid values unrepresentable.
 
-The client CLI also retains Incur's Fetch surface for agents and HTTP consumers. `todoctl serve` starts it explicitly on an assigned port. The executable entry module does not default-export the Incur object because Bun treats any entrypoint default export with a `fetch` handler as a server and starts it automatically. `todo-server` exposes only the Elysia HTTP application.
+## Feedback layers
 
-The Node-API addon is a same-process optimization boundary. It is suitable for parsing, indexing, compression, or other CPU-heavy operations. Keep calls coarse enough that native work dominates crossing overhead. For a real parser, export batch operations or byte-buffer APIs rather than one call per token.
+| Layer             | Runs                      | Catches                                                                               |
+| ----------------- | ------------------------- | ------------------------------------------------------------------------------------- |
+| Nudge             | before a write, and in CI | mechanically decidable violations: escape hatches, fixed ports, wrong package manager |
+| TypeScript        | `check`                   | shape and exhaustiveness                                                              |
+| Oxlint            | `check`                   | unsafe operations, unhandled promises, import hygiene                                 |
+| Bun tests         | `check`                   | behavior, with in-memory dependencies                                                 |
+| Capability checks | `ci`                      | migrations, native builds, release matrices, integration                              |
+| Bastion           | after a changeset         | semantic invariants a rule cannot express                                             |
 
-## Testing layers
+A Nudge rule must be true or false with no judgment. Anything that needs judgment is a Bastion reviewer, and a reviewer covers one concern. Do not move a rule between layers because it is easier to write there.
 
-- Rust unit tests prove parser semantics without Bun.
-- Native decoder tests prove TypeScript rejects malformed addon output without compiling Rust.
-- Elysia application tests inject an in-memory repository and parser.
-- Eden client tests exercise the real Elysia handler through a fetch boundary.
-- Web component tests render React against that same real handler and in-memory repository under happy-dom.
-- Database integration tests exercise Drizzle against Postgres.
-- CI's smoke test runs the built native addon, server, database, Eden client, and CLI together.
+## Worktrees
 
-This arrangement makes most tests cheap and keeps the expensive boundary test authoritative.
+Each agent works in one complete Git worktree. Branch-sensitive state (dependency links, build output, databases, ports) is per worktree; immutable package bytes are shared through Bun's global store. `bunfig.toml` selects the isolated linker so an undeclared dependency fails locally the way it fails in a fresh clone.
+
+The Claude `SessionStart` hook and the Codex setup script fetch `origin/main`, install locked dependencies, and start eph services. They do not rebase; that decision belongs to the agent once it has looked at the branch. `WorktreeRemove` and Codex cleanup run `eph clean` so a removed worktree takes its containers and volumes with it.
+
+Never share a `node_modules` directory or a build output directory between worktrees by symlink.

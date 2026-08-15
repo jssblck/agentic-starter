@@ -1,1 +1,0 @@
-Add a database column and generate its migration.

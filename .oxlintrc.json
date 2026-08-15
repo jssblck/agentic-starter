@@ -22,26 +22,8 @@
     "unicorn/no-array-for-each": "off",
     "no-await-in-loop": "off"
   },
-  "ignorePatterns": [
-    "apps/web/src/routeTree.gen.ts",
-    "dist/**",
-    "target/**",
-    "libs/native/artifacts/**"
-  ],
+  "ignorePatterns": ["dist/**"],
   "overrides": [
-    {
-      "files": ["apps/web/src/main.tsx"],
-      "rules": {
-        "import/no-unassigned-import": "off"
-      }
-    },
-    {
-      "files": ["libs/native/src/load.ts"],
-      "rules": {
-        "typescript/no-unsafe-assignment": "off",
-        "typescript/no-unsafe-call": "off"
-      }
-    },
     {
       "files": ["tools/**/*.ts"],
       "rules": {

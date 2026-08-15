@@ -23,5 +23,5 @@
     "types": ["bun"]
   },
   "include": ["apps/**/*.ts", "libs/**/*.ts", "tools/**/*.ts", "tests/**/*.ts"],
-  "exclude": ["**/node_modules/**", "apps/web/**", "dist/**", "target/**", ".cache/**"]
+  "exclude": ["**/node_modules/**", "dist/**"]
 }

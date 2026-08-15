@@ -12,15 +12,6 @@ logs/
 tmp/
 temp/
 
-# Rust
-target/
-
-# Native addon build products
-libs/native/artifacts/*
-!libs/native/artifacts/.gitkeep
-*.node
-.cache/
-
 # Local services and secrets
 .env
 .env.*

@@ -1,18 +1,16 @@
 import { describe, expect, test } from 'bun:test'
 
-import { assessProbe, parseRequiredVersions, type ToolProbe } from './doctor.ts'
+import { assessProbe, parseRequiredBun, type ToolProbe } from './doctor.ts'
 
 describe('doctor requirements', () => {
-  test('reads the Bun and Rust pins from repository config', () => {
-    expect(
-      parseRequiredVersions({ packageManager: 'bun@1.3.14' }, '[toolchain]\nchannel = "1.97.1"\n'),
-    ).toEqual({ bun: '1.3.14', rust: '1.97.1' })
+  test('reads the Bun pin from package.json', () => {
+    expect(parseRequiredBun({ packageManager: 'bun@1.3.14' })).toBe('1.3.14')
   })
 
   test('rejects an unpinned Bun package manager', () => {
-    expect(() =>
-      parseRequiredVersions({ packageManager: 'bun@latest' }, 'channel = "1.97.1"'),
-    ).toThrow('package.json packageManager must pin Bun as bun@X.Y.Z')
+    expect(() => parseRequiredBun({ packageManager: 'bun@latest' })).toThrow(
+      'package.json packageManager must pin Bun as bun@X.Y.Z',
+    )
   })
 })
 

@@ -4,9 +4,8 @@ name = "agentic-starter"
 [setup]
 script = '''
 git fetch --force origin refs/heads/main:refs/remotes/origin/main
-git rebase origin/main
 bun install --frozen-lockfile
-eph up --role dep
+eph up
 '''
 
 [cleanup]

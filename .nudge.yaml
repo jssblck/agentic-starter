@@ -81,50 +81,6 @@ rules:
           - kind: Regex
             pattern: "\\bas\\s+unknown\\s+as\\b"
 
-  - name: react-no-manual-memoization
-    description: The React Compiler owns memoization
-    message: 'Delete the manual memoization; the React Compiler memoizes components and values automatically.'
-    on:
-      - hook: PreToolUse
-        tool: Write
-        file: '**/*.tsx'
-        content:
-          - kind: Regex
-            pattern: "\\b(?:useMemo|useCallback|memo)\\s*\\("
-      - hook: PreToolUse
-        tool: Edit
-        file: '**/*.tsx'
-        new_content:
-          - kind: Regex
-            pattern: "\\b(?:useMemo|useCallback|memo)\\s*\\("
-
-  - name: rust-no-unwrap
-    description: Preserve error context at the native boundary
-    message: 'Handle the error or use `.expect("specific invariant")` with useful context, then retry.'
-    on:
-      - hook: PreToolUse
-        tool: Write
-        file: '**/*.rs'
-        content:
-          - kind: SyntaxTree
-            language: rust
-            query: |
-              (call_expression
-                function: (field_expression
-                  field: (field_identifier) @method)
-                (#eq? @method "unwrap"))
-      - hook: PreToolUse
-        tool: Edit
-        file: '**/*.rs'
-        new_content:
-          - kind: SyntaxTree
-            language: rust
-            query: |
-              (call_expression
-                function: (field_expression
-                  field: (field_identifier) @method)
-                (#eq? @method "unwrap"))
-
   - name: worktree-no-fixed-port
     description: Let eph assign a distinct port to every worktree run service
     message: 'Use `port=auto` for `run=` services; fixed development ports collide across worktrees.'
@@ -163,11 +119,3 @@ rules:
           - kind: Regex
             pattern: '^npx (?P<command>.+)$'
             replace: 'bunx {{ $command }}'
-
-  - name: schema-change-reminder
-    message: 'A database schema change requires generated SQL, matching Elysia response schemas when the API moves, and focused migration tests.'
-    on:
-      - hook: UserPromptSubmit
-        prompt:
-          - kind: Regex
-            pattern: '(?i)(database|schema|migration|column|postgres|drizzle)'

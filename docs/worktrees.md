@@ -2,60 +2,39 @@
 
 ## One checkout per agent
 
-Use one complete Git worktree for each agent or speculative branch:
-
 ```sh
 git worktree add ../worktrees/agent-42 -b agent/42 main
 ```
 
-A change that modifies TypeScript and Rust belongs in one worktree and one commit series. Separate language-specific worktrees make interface changes non-atomic and move integration failures later.
+A change that spans several packages belongs in one worktree and one commit series. Splitting it across worktrees makes interface changes non-atomic and moves integration failures later.
 
-## Agent-managed worktrees
+## What the hooks do
 
-Codex and Claude copy the ignored `.env` file listed in `.worktreeinclude`. Each worktree gets its own dependency graph. Neither tool copies `node_modules`.
+Claude Code's `SessionStart` hook and Codex's setup script run the same three steps: fetch `origin/main`, `bun install --frozen-lockfile`, `eph up`. They stop when any step fails. They do not rebase the branch; look at the branch, then decide.
 
-The Codex local environment and Claude `SessionStart` hook force-refresh `origin/main` and rebase the workspace branch onto it before installing locked dependencies and prewarming Postgres. Setup stops if the fetch or rebase fails. Codex exposes actions for starting the full stack and running the repository checks.
+Both tools copy the ignored files listed in `.worktreeinclude` (`.env`) into a new worktree. Neither copies `node_modules`.
 
-Codex cleanup and Claude's `WorktreeRemove` hook run `eph clean`. Removing an agent-managed worktree also removes its Postgres container, volume, and saved eph state.
+`WorktreeRemove` and Codex cleanup run `eph clean`, which removes the worktree's containers, volumes, and saved eph state.
 
 ## Bun state
 
-Each checkout has its own `node_modules` link graph. `bunfig.toml` selects the isolated linker so undeclared dependencies do not become accidentally visible. Bun's global store shares immutable package bytes across worktrees.
+Each checkout has its own `node_modules` link graph. `bunfig.toml` selects the isolated linker so an undeclared dependency does not resolve through a sibling package, and the global store shares immutable package bytes across worktrees. Never symlink one mutable `node_modules` into another checkout.
 
-Never share one mutable `node_modules` directory by symlink. The package graph and workspace links are branch state.
+Verify dependency changes with a fresh clone. The live checkout's link graph can predate the change and hide a missing declaration that CI will catch.
 
-## Postgres and ports
+## Services and ports
 
-`.eph` gives every checkout a distinct container project, named volume, and random host port. It also allocates the server port and injects both values into the application.
+`.eph` declares services once. Every checkout gets a distinct container project, named volumes, and assigned host ports, and eph injects the resolved values as environment variables:
 
 ```sh
-eph up --role dep   # prewarm Postgres
-
-eph up              # adopt Postgres, migrate, start server, CLI, and web
-
-eph down            # stop what this session started
-
-eph clean            # remove this worktree's service data
+eph up          # start everything
+eval "$(eph env)"
+eph down        # stop what this session started
+eph clean       # remove this worktree's service data
 ```
 
-Do not add fixed development ports to application configuration. Tests that need a fixed port should bind to loopback port zero or let eph allocate one.
-
-## Native build state
-
-Do not point concurrent worktrees at a shared `CARGO_TARGET_DIR`. Cargo's incremental files and build-script outputs are mutable and branch-sensitive.
-
-`tools/native-cache.ts` shares only completed `.node` artifacts. Its key contains:
-
-- Rust source and Cargo manifests;
-- Cargo lockfile;
-- Rust toolchain file;
-- native package metadata;
-- target triple;
-- debug or release profile;
-- resolved application version.
-
-A per-key directory lock prevents several agents from compiling the same artifact simultaneously. A worktree receives a hard link when possible and a copy otherwise.
+Services with `run=` must use `port=auto`; a Nudge rule rejects fixed ports. Tests that need a port bind to loopback port zero.
 
 ## Secrets
 
-A linked Git worktree does not inherit ignored files from another checkout. Do not assume the main checkout's `.env` exists. Prefer eph-resolved local values and a user-level secret manager. When a worktree requires a local secret file, have the bootstrap tool create or link it explicitly.
+A linked worktree does not inherit ignored files from another checkout unless `.worktreeinclude` lists them. Prefer eph-resolved values and a user-level secret manager. When a worktree needs a local secret file, have setup create or link it explicitly.
