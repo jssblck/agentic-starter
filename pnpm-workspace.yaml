@@ -1,3 +1,9 @@
 packages:
   - apps/*
   - libs/*
+
+# pnpm refuses to run dependency build scripts that are not listed here, and
+# `pnpm install` exits 1 when it meets one. Every capability guide lists the
+# entries it needs. pnpm edits this map itself with placeholder lines when it
+# meets a new script; replace the placeholder, do not append a duplicate key.
+allowBuilds: {}

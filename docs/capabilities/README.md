@@ -2,7 +2,7 @@
 
 The base repository ships no application code. Each document in this directory describes one capability that a derived project can add: the packages, dependencies, shared-hub edits, invariants, and checks it needs. The `bootstrap` skill runs the interview that selects capabilities and applies these guides in dependency order.
 
-The CLI, PostgreSQL, Rust, and release guides were written from a working implementation this repository once carried. The web app and API server guides were written from verified upstream documentation in August 2026 and then corrected against a throwaway build (Next 16.3, Hono 4.13, Node 22 and 26) that exercised install, typecheck, build, standalone boot, the mounted API, and server actions. The worker, auth, observability, and environment guides were written from upstream documentation and package registries in August 2026 without a throwaway. All of them predate the move from Bun to pnpm and Node; the commands were translated, the behavior was not re-verified. Nothing in the base verifies any guide, so treat pinned versions as the last known-good set and confirm each against its registry before installing. When a guide proves wrong, fix the guide in the same changeset as the code.
+Every guide was exercised in August 2026 by a throwaway project on the current base (pnpm 11, Node 26, Next 16.3, Hono 4.13, Postgres 18, pg-boss 12, Clerk Core 3, LogTape 2.3, napi 3, Bun 1.3 as compile target). The throwaway covered install, `check` from a fresh clone, standalone boot, the mounted API, server actions, a Playwright smoke test, migrations, transactional enqueue and a worker consuming it, structured logs with request ids, a Rust addon loaded on Node and inside a Bun-compiled CLI, and container images for the web app and the worker. Two things were not exercised: a real Clerk sign-in (no network) and cross-platform release builds. Nothing in the base verifies any guide afterward, so treat pinned versions as the last known-good set and confirm each against its registry before installing. When a guide proves wrong, fix the guide in the same changeset as the code.
 
 ## Order
 
@@ -28,9 +28,12 @@ Then add the rest in this order. Each depends only on the ones before it.
 
 Every capability touches some of these files. Edit each with the `mergeable-edits` discipline: append one entry, do not reorder.
 
+After each guide, verify from a fresh clone: `git clone` to a scratch directory, `pnpm install --frozen-lockfile`, `pnpm run check`. The live checkout's link graph and generated files (Next's `next-env.d.ts`, `.next/types`) hide errors a clean machine hits.
+
 | Hub                                          | What a capability adds                                             |
 | -------------------------------------------- | ------------------------------------------------------------------ |
 | `package.json`                               | workspace dependencies, scripts, `check` and `ci` steps            |
+| `pnpm-workspace.yaml`                        | `allowBuilds` entries for dependencies that run install scripts    |
 | `.github/workflows/ci.yml`                   | a job or step for the capability's authoritative check             |
 | `.eph`                                       | a service block or environment variables                           |
 | `.nudge.yaml`                                | deterministic rules, each with fixtures in `tests/fixtures/nudge`  |

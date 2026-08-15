@@ -23,14 +23,16 @@ Both accept Zod 4 (Standard Schema). For a process without a client bundle, `env
     server: { DATABASE_URL: z.url(), CLERK_SECRET_KEY: z.string().min(1) /* ... */ },
     client: { NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1) },
     experimental__runtimeEnv: {
-      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env['NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY'],
     },
     emptyStringAsUndefined: true,
-    skipValidation: process.env.SKIP_ENV_VALIDATION === '1',
+    skipValidation: process.env['SKIP_ENV_VALIDATION'] === '1',
   })
   ```
 
-  Import `./env` in `next.config.ts` so validation runs at build. Client variables must carry `NEXT_PUBLIC_`. With `output: 'standalone'`, add both `@t3-oss/env-nextjs` and `@t3-oss/env-core` to `transpilePackages`.
+  Bracket access is what `noPropertyAccessFromIndexSignature` requires; Next still inlines `NEXT_PUBLIC_*` for a literal key. Client variables must carry `NEXT_PUBLIC_`. With `output: 'standalone'`, add both `@t3-oss/env-nextjs` and `@t3-oss/env-core` to `transpilePackages`.
+
+  Do not import the env module from `next.config.ts`. `next build` already evaluates every route module that imports it, and `next typegen` (which runs in `check`) would need every server variable too. Run `typegen` and `build:web` with `SKIP_ENV_VALIDATION=1`; validation happens at boot. Note that a throw inside Next's `instrumentation.ts` does not stop the server (see [Web app](web-app.md)); the container entrypoint runs a one-line env check before `server.js`.
 
 - `apps/server/src/env.ts`, `apps/worker/src/env.ts`: `createEnv({ server, runtimeEnv: process.env, emptyStringAsUndefined: true })`.
 - `apps/cli`: Incur already declares env schemas per command; do not add a second layer.

@@ -9,11 +9,14 @@ Self-hosted on Node (Railway, a Docker host). Nothing here depends on Vercel.
 Run once, from the repository root:
 
 ```sh
+mkdir -p apps
 pnpm dlx create-next-app@latest apps/web --ts --app --tailwind --no-eslint --no-src-dir --import-alias "@/*" --use-pnpm --skip-install --turbopack --yes
-rm apps/web/README.md apps/web/CLAUDE.md
+rm apps/web/README.md apps/web/CLAUDE.md apps/web/pnpm-workspace.yaml
 ```
 
-Then replace what it wrote: `apps/web/package.json` (name, exact pins from the table below, no `ignoreScripts`), `apps/web/tsconfig.json` (extend the root and keep the Next plugin, see below), `next.config.ts` (see Configuration). Keep its `.gitignore` or fold the entries into the root one. Keep `apps/web/AGENTS.md`: `next dev` rewrites it on every run with a block that points agents at `node_modules/next/dist/docs`, and committing it is the only way to keep the tree clean.
+`apps/` must exist first; otherwise the CLI reports "application path is not writable". It writes a nested `pnpm-workspace.yaml` (delete it, but move its `allowBuilds` entries for `sharp` and `unrs-resolver` into the root file, with `sharp: true`) and a `packageManager` field (delete it).
+
+Then replace what it wrote: `apps/web/package.json` (name, exact pins from the table below, no `ignoreScripts`), `apps/web/tsconfig.json` (extend the root and keep the Next plugin, see below), `next.config.ts` (see Configuration). Keep its `.gitignore` or fold the entries into the root one; it ignores `next-env.d.ts`, which Next 16 regenerates. Keep `apps/web/AGENTS.md`: `next dev` rewrites it on every run with a block that points agents at `node_modules/next/dist/docs`, and committing it is the only way to keep the tree clean.
 
 Then the UI kit:
 
@@ -22,7 +25,7 @@ cd apps/web && pnpm dlx shadcn@latest init -b base -p nova --no-monorepo --no-po
 pnpm dlx shadcn@latest add button input textarea dialog
 ```
 
-`-p` is required; without a preset the CLI prompts and an agent hangs. Do not pass `-t`; that creates a new project. `init` adds `shadcn`, `lucide-react`, and `tw-animate-css` as runtime dependencies (its `globals.css` imports `shadcn/tailwind.css`) and rewrites the root `tsconfig.json` formatting; run `pnpm run fmt` afterward.
+`-p` is required; without a preset the CLI prompts and an agent hangs. Do not pass `-t`; that creates a new project. `init` adds `shadcn`, `lucide-react`, and `tw-animate-css` as runtime dependencies (its `globals.css` imports `shadcn/tailwind.css`) with caret ranges, ignoring `save-exact`; pin them. Run `pnpm run fmt` afterward.
 
 ## Packages
 
@@ -60,7 +63,7 @@ pnpm dlx shadcn@latest add button input textarea dialog
 | `@types/react-dom`                         | 19.2.4       | dev                                                                                                                                                              |
 | `@playwright/test`                         | 1.62.1       | root dev, for the smoke test                                                                                                                                     |
 
-Next requires Node 20.9+; the base pins 24 or later. This guide was verified with Bun as the installer. pnpm's isolated layout is what Next's own Docker example uses; if `outputFileTracingIncludes` needs more entries under pnpm, record them here.
+Next requires Node 20.9+; the base pins 24 or later. `pnpm-workspace.yaml` `allowBuilds`: `sharp: true`, `unrs-resolver: false`.
 
 `apps/web/tsconfig.json` extends the root, sets `jsx: "preserve"`, `allowJs`, `incremental`, `plugins: [{ name: "next" }]`, `paths: { "@/*": ["./*"] }`, and includes `next-env.d.ts`, `**/*.ts`, `**/*.tsx`, `.next/types/**/*.ts`. The root `tsconfig.json` excludes `apps/web/**`.
 
@@ -72,7 +75,15 @@ Next requires Node 20.9+; the base pins 24 or later. This guide was verified wit
 const config: NextConfig = {
   output: 'standalone',
   cacheComponents: true,
-  outputFileTracingIncludes: { '/*': ['node_modules/sharp/**/*'] },
+  outputFileTracingIncludes: {
+    // Standalone tracing misses two things under the isolated linker: sharp's
+    // native binaries and @swc/helpers/esm (the server boots to "Cannot find
+    // module .../@swc/helpers/esm/_interop_require_default.js" without it).
+    '/*': [
+      'node_modules/sharp/**/*',
+      '../../node_modules/.pnpm/@swc+helpers*/node_modules/@swc/helpers/esm/**/*',
+    ],
+  },
   experimental: { serverActions: { allowedOrigins: [/* public hostnames behind the proxy */] } },
   async headers() {
     return [{ source: '/api/:path*', headers: [{ key: 'X-Accel-Buffering', value: 'no' }] }]
@@ -81,7 +92,10 @@ const config: NextConfig = {
 ```
 
 - `cacheComponents: true` turns on partial prerendering and makes everything dynamic unless a function or component says `"use cache"`. The per-route `dynamic`, `revalidate`, and `fetchCache` exports do not exist in this mode; agents reach for them from older training data. Cache with `"use cache"` plus `cacheLife()` and `cacheTag()`.
-- A page is prerendered static at build unless Next sees something dynamic in it (`cookies()`, `headers()`, `searchParams`, an uncached `fetch`). A page that reads a repository or database directly looks static and will never reflect writes. Put `await connection()` (from `next/server`) at the top of every page that must show current data. The build summary marks such pages `◐`; a `○` next to a data page is the bug.
+- A page is prerendered static at build unless Next sees something dynamic in it (`cookies()`, `headers()`, `searchParams`, an uncached `fetch`). A page that reads a repository or database directly looks static and will never reflect writes. Put `await connection()` (from `next/server`) in the component that reads the data, and put that component under a `<Suspense>` boundary. The page itself stays synchronous and renders the shell. The build summary marks such pages `◐`; a `○` next to a data page is the bug.
+- Everything request-bound (`connection()`, `params`, `searchParams`, `cookies()`, `headers()`, `auth()`, Clerk's `<Show>` and `<UserButton>`) must sit under `<Suspense>`. Reading it in the page body fails the build with "uncached or runtime data during prerendering" (`blocking-prerender-dynamic`). The escape hatch is `export const instant = false` on the page, which allows a blocking route; use it only while migrating.
+- `NEXT_PUBLIC_*` values are inlined into client bundles when read with a literal key. `process.env['NEXT_PUBLIC_X']` (which `noPropertyAccessFromIndexSignature` requires) is inlined the same as dot access. A computed key is not.
+- `instrumentation.ts` `register()` that throws (env validation, sink setup) does not stop the server; it keeps running and answers 500 on every request. Fail fast elsewhere: the container entrypoint runs `node apps/web/env-check.js` (a two-line script that imports the env module) before `server.js`, and the health check must not be exempt from that failure.
 - Server components, server actions, and route handlers are separate server bundles. A module-level value in `lib/` is created once per bundle, so in-memory state is not shared between a page and the mounted API. Treat that as the design, not an obstacle: every process-local shortcut it blocks would also break the first horizontal scale-out. Construct clients (database, queue, cache) in `lib/`; keep no state there.
 - `notFound()` inside a partially prerendered page streams the 404 body under HTTP 200. That is by design; check the rendered text, not the status, when verifying.
 - `proxy.ts` replaced `middleware.ts` in Next 16 and runs on Node. Do not create `middleware.ts`.
@@ -178,16 +192,17 @@ The [API server](api-server.md) guide adds one more for the route chain. Togethe
 
 - `libs` and the mounted Hono app: Vitest, in-process, no port.
 - Client components: Vitest with happy-dom (`environment: "happy-dom"` on a `web` project in `vitest.config.ts`), rendering the component with its props. Do not render server components this way; Next documents that async server components are not unit-testable in Vitest or Jest either.
-- Server components, server actions, and routing: one Playwright smoke test in `tests/e2e` against the built standalone server. `playwright.config.ts` at the root uses `webServer` with the copy step and `node apps/web/.next/standalone/apps/web/server.js` (a monorepo standalone nests under `apps/web`). It runs in `ci`, not `check`. Locally, run `pnpm dlx playwright install --with-deps chromium` once; the browser needs system libraries.
+- Server components, server actions, and routing: one Playwright smoke test in `tests/e2e` against the built standalone server. `playwright.config.ts` at the root uses `webServer` with the copy step and `node apps/web/.next/standalone/apps/web/server.js` (a monorepo standalone nests under `apps/web`), `url` pointing at `/api/health`, and the environment the server needs (`PORT`, `HOSTNAME=127.0.0.1`, `DATABASE_URL`). It runs in `ci`, not `check`. Locally, run `pnpm dlx playwright install --with-deps chromium` once; the browser needs system libraries. Once auth is installed the smoke test needs real Clerk test keys; see [Auth](auth.md).
 
 ## Hubs
 
-- `package.json`: `dev:web` (`pnpm --filter @scope/web dev`), `build:web` (`pnpm --filter @scope/web build`), `test:e2e` (`playwright test`). Add `build:web` and `test:e2e` to `ci`. Extend `typecheck` with `&& pnpm --filter @scope/web exec next typegen && tsc --noEmit -p apps/web/tsconfig.json`; the `PageProps` and `LayoutProps` globals do not exist until typegen or a build has run.
-- `.eph`: `[web]` block with `run=pnpm --filter @scope/web dev -- --port ${web.port}`, `role=app`, `port=auto`; `[env]` entry `WEB_URL=http://localhost:${web.port}` and, when the API is mounted, `<PREFIX>_API_URL=http://localhost:${web.port}`.
+- `package.json`: `typegen` (`pnpm --filter @scope/web exec next typegen`), `dev:web` (`pnpm --filter @scope/web dev`), `build:web` (`pnpm --filter @scope/web build`), `test:e2e` (`playwright test`). Put `pnpm run typegen &&` at the front of `check`: the `PageProps` and `LayoutProps` globals and `next-env.d.ts` do not exist on a fresh clone until typegen runs, and type-aware lint fails on them before typecheck would. Extend `typecheck` with `&& tsc --noEmit -p apps/web/tsconfig.json`. Add `build:web` and `test:e2e` to `ci`. Set `SKIP_ENV_VALIDATION=1` on `typegen` and `build:web` when the env module has server variables without defaults; `next build` evaluates route modules that import it (see [Environment](env.md)).
+- `.eph`: `[web]` block with `run=sh -c 'cd apps/web && exec node_modules/.bin/next dev'`, `role=app`, `port=auto`, `env.PORT=${web.port}`. eph interpolates `${web.port}` only in `env.*` and top-level variables, not in `run=`; `next dev` reads `PORT`. The `exec` form matters: `run=pnpm --filter ... dev` leaves `next-server` alive after `eph down` and the next `eph up` fails on "existing server". Do not put `${web.port}` in a top-level `[env]` variable: `eph env` refuses to resolve while the app is down, which breaks `eph up --role dep`. Clients read the URL from `eph status` after `eph up`.
 - `.oxlintrc.json`, `.oxfmtrc.json`, `.gitignore`: ignore `apps/web/.next/**` and `apps/web/next-env.d.ts`. Add an oxlint override for `apps/web/app/layout.tsx` turning off `import/no-unassigned-import` (the CSS import).
+- `pnpm-workspace.yaml`: `allowBuilds` entries `sharp: true`, `unrs-resolver: false`.
 - `.github/workflows/ci.yml`: `pnpm dlx playwright install --with-deps chromium` before `pnpm run ci`.
 - `AGENTS.md` check classification: "Web app: run the web tests and `pnpm run typecheck`. Run `pnpm run build:web` when routes, configuration, or dependencies change. Server-rendered behavior is covered by `test:e2e` in `ci`."
-- Docker (release capability): the official Next `with-docker` layout. Builder installs with pnpm (`corepack enable && pnpm install --frozen-lockfile`) and runs `pnpm run build:web`; the runtime stage is `node:24-alpine` (or the pinned Node major), copies `apps/web/.next/standalone/` to `/app`, then `apps/web/public` to `/app/apps/web/public` and `apps/web/.next/static` to `/app/apps/web/.next/static`, sets `HOSTNAME=0.0.0.0` and `PORT`, and runs `node apps/web/server.js` from `/app` as a non-root user. `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` is a build arg.
+- Docker (release capability): the official Next `with-docker` layout. Builder copies `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `package.json`, `.npmrc`, the root `tsconfig.json` (the app's `tsconfig` extends it; Turbopack fails without it), `apps`, and `libs`, then `corepack enable && pnpm install --frozen-lockfile` and `SKIP_ENV_VALIDATION=1 pnpm run build:web` with `NEXT_PUBLIC_*` values as build args; the runtime stage is `node:24-alpine` (or the pinned Node major), copies `apps/web/.next/standalone/` to `/app`, then `apps/web/public` to `/app/apps/web/public` and `apps/web/.next/static` to `/app/apps/web/.next/static`, sets `HOSTNAME=0.0.0.0` and `PORT`, and runs `node apps/web/server.js` from `/app` as a non-root user. `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` is a build arg.
 
 ## What is not here
 

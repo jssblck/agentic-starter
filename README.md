@@ -52,7 +52,7 @@ Each guide under `docs/capabilities` describes one addition: packages, pinned de
 8. Rust behind Node-API
 9. Release (Git-tag versioning, CLI binaries and installers, container images)
 
-The guides were written from a working implementation at the moment it was removed. Nothing verifies them afterward except the next agent that follows one; when a guide proves wrong, fix it in the same commit as the code.
+Each guide was exercised by a throwaway project on the current base before it was deleted. Nothing verifies them afterward except the next agent that follows one; when a guide proves wrong, fix it in the same commit as the code.
 
 ## Review before treating the result as a baseline
 

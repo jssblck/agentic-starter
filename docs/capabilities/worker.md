@@ -10,7 +10,7 @@ Of the Postgres-only TypeScript queues with real adoption (pg-boss, graphile-wor
 
 ## Packages
 
-- `libs/jobs`: the job registry and the typed enqueue/handle wrapper. `registry.ts` declares every job as `{ name, schema }` with a Zod schema for its payload; `send.ts` exports `enqueue(tx, job, payload, options)` which parses the payload with the job's schema and calls pg-boss through the Drizzle adapter; `work.ts` exports `handle(boss, job, handler)` which parses incoming data with the same schema before calling the handler. No handler code lives here.
+- `libs/jobs`: the job registry and the typed enqueue/handle wrapper. `registry.ts` declares every job as `{ name, schema }` with a Zod schema for its payload (`T extends object`; pg-boss data is an object). `send.ts` exports `createSender(connectionString)` returning `{ enqueue(tx, job, payload, options), close }`; `enqueue` parses the payload with the job's schema and calls pg-boss through the Drizzle adapter. `work.ts` exports `ensureQueues(boss, jobs)` and `handle(boss, job, handler)`, which parses incoming data with the same schema before calling the handler. No handler code lives here.
 - `apps/worker`: thin Node entrypoint. Reads env, constructs the database and pg-boss, registers each handler from `libs/*` through `handle`, starts, and drains on `SIGTERM`.
 - Handlers themselves live next to the domain they serve in `libs` (`libs/<domain>/jobs/*.ts`), take injected dependencies, and are unit-tested without pg-boss.
 
@@ -34,14 +34,17 @@ pg-boss requires Node 22.12+ and Postgres 13+. It depends on `pg` itself; the sa
   })
   ```
 
-  `enqueue` wraps `new PgBoss({ db: fromDrizzle(tx, sql) })`-style adapter usage; see pg-boss's `docs/api/adapters.md`. Server actions and Hono routes both call it.
+  The sender side is its own construction: `import { PgBoss, fromDrizzle } from 'pg-boss'` (named exports; there is no default), `new PgBoss({ connectionString, supervise: false, schedule: false, migrate: false })`, and `boss.send(name, data, { db: fromDrizzle(tx, sql) })`. A sender still needs `await boss.start()` once before the first send (pg-boss reads its queue cache through its own connection and asserts otherwise), so `createSender` memoizes a lazy `start()` promise inside `enqueue`. That is what lets a Next server bundle construct it at module scope. Server actions and Hono routes both call it.
 
-- The worker constructs one `PgBoss` with `useListenNotify: true`, creates each queue with `notify: true`, `retryLimit`, `retryBackoff: true`, and a `deadLetter` queue, then `boss.work(name, { localConcurrency }, handler)`.
+  Enqueue from a repository hook (`createNoteRepository(db, { onCreated: (tx, note) => enqueue(...) })`) so the app wires the job without the repository knowing pg-boss.
+
+- Queues must exist before the first `send` ("Queue X does not exist"), and a queue's dead-letter queue must exist before the queue that names it. `ensureQueues` creates `<name>.dead` then `<name>` (`notify: true`, `retryLimit`, `retryBackoff: true`, `deadLetter`) for every registry entry; it is idempotent. Run it at worker boot and from the migration step, so a fresh database accepts sends before any worker has run.
+- The worker constructs one `PgBoss` with `useListenNotify: true`, runs `ensureQueues`, then `boss.work(name, { localConcurrency }, handler)` for each job. `work` receives a batch array; iterate it.
 - Handlers are idempotent. A job may run twice; design for it (upserts, idempotency keys, check-then-act inside a transaction).
 - Payloads carry ids, not rows. The handler reloads what it needs.
 - Long jobs call the heartbeat pg-boss provides, or split into smaller jobs.
 - Cron uses `boss.schedule(name, cron, data, { tz })`; a schedule enqueues an ordinary job, so the handler is the same code.
-- Shutdown: on `SIGTERM`, `await boss.stop({ graceful: true, timeout: 30_000 })`, then close the database. Match the timeout to the platform's stop grace period.
+- Shutdown: on `SIGTERM` and `SIGINT`, `await boss.stop({ graceful: true, timeout: 30_000 })`, close the database, then `process.exit(0)`. Memoize the stop promise: a second signal calling `pool.end()` again throws "Called end on pool more than once". Match the timeout to the platform's stop grace period.
 - pg-boss holds one dedicated connection for LISTEN. It must not go through a transaction-mode pooler.
 
 ## Schema and migrations
@@ -52,15 +55,15 @@ pg-boss owns the `pgboss` schema and migrates it on `start()` under an advisory 
 
 - Handlers: Vitest with in-memory repositories; no pg-boss.
 - The registry: a test that every job's schema round-trips a sample payload.
-- One integration test in `tests/integration` that enqueues through the adapter and runs `boss.work` once against real Postgres. It runs in `ci`.
+- One integration test, `libs/jobs/src/queue.integration.test.ts`, that enqueues through the adapter and runs `boss.work` once against real Postgres. It uses a private queue named `test.<uuid>` created on the fly: a running dev worker (the eph `[worker]` block) on the same database would otherwise consume the job first and the test would time out. It runs in `ci`.
 
 ## Hubs
 
 - `package.json`: `dev:worker` (`node --watch apps/worker/src/main.ts`), `start:worker` (`node apps/worker/src/main.ts`).
-- `.eph`: `[worker]` block with `run=node --watch apps/worker/src/main.ts`, `role=app`; no port. It shares `DATABASE_URL`.
+- `.eph`: `[worker]` block with `run=node --watch apps/worker/src/main.ts`, `role=app`; no port. eph injects the resolved top-level variables into `run=` processes, so `DATABASE_URL` from `[env]` arrives without repeating it.
 - `AGENTS.md` invariants: "Enqueue jobs inside the transaction that creates the data they reference. Handlers live in `libs`, are idempotent, and receive ids. Only `apps/worker` calls `boss.work`."
 - `AGENTS.md` check classification: "Jobs: run the handler tests and the registry test; run `test:integration` when the queue configuration changes."
-- Docker (release capability): a second image or a second `CMD` on the same image running `node dist/worker.js`; on Railway, a second service from the same repo.
+- Docker (release capability): its own image built by the container recipe in [Release](release.md) with `--filter @scope/worker...` and `CMD ["node", "apps/worker/src/main.ts"]`; on Railway, a second service from the same repo.
 
 ## Bastion reviewer
 

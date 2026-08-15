@@ -42,10 +42,11 @@ Keep the `hono` version identical across workspaces; RPC types break across mism
   export type AppType = typeof app
   ```
 
-- Always pass an explicit status to `c.json(...)`. The client's response type is discriminated on it: `if (res.ok) { const data = await res.json() }` narrows to the 2xx shape, `res.status === 404` to that shape.
+- Always pass an explicit status to `c.json(...)`. The client's response type is discriminated on it: `if (res.ok) { const data = await res.json() }` narrows to the 2xx shape, `res.status === 404` to that shape. Test `res.ok` first and return; then handle the declared error statuses. Checking `!res.ok` after a status check narrows `res` to `never`, because only declared statuses exist in the union.
+- Typed errors: `erasableSyntaxOnly` rejects constructor parameter properties (`constructor(readonly status: number)`), so declare the fields on the class and assign them in the constructor.
 - Validate every input with `zValidator('json' | 'query' | 'param' | ...)`. Read it with `c.req.valid(target)`. Return `{ code, message }` for expected failures with a 4xx status.
 - The client wraps `hc<AppType>(origin, { fetch, headers })`. Pass the **origin only** (`http://localhost:3000`); the inferred paths already include `/api`. Convert non-ok responses into a thrown typed error so callers never see Hono's `{ ok, status }` shape.
-- Auth for non-browser clients is a bearer token checked in Hono middleware. Do not reuse the browser session.
+- Auth for non-browser clients is a bearer token checked in Hono middleware. Do not reuse the browser session. Inject the check as an `authenticate(request): Promise<Principal | undefined>` dependency so tests use a static token map and production uses Clerk (see [Auth](auth.md)). Middleware that returns early must `return next()` on the success path or `noImplicitReturns` fails.
 
 ## Tests
 

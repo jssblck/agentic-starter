@@ -10,7 +10,7 @@ Incur defines commands, options, environment variables, help, version, and struc
 
 | Package | Version | Where      |
 | ------- | ------- | ---------- |
-| `incur` | 0.4.17  | `apps/cli` |
+| `incur` | 0.5.1   | `apps/cli` |
 
 Add `"bin": { "<name>": "./src/main.ts" }` to `apps/cli/package.json`.
 
@@ -18,12 +18,12 @@ Add `"bin": { "<name>": "./src/main.ts" }` to `apps/cli/package.json`.
 
 - `Cli.create('<name>', { version: VERSION, description })`. Each `cli.command(name, { description, args, options, env, output, run })` declares its schemas; Incur renders help and validates input.
 - Inject the API client (or any service) through a `dependencies` object so command tests call `createCli({ createApi: () => inMemoryApi })` and never spawn a process.
-- Environment schemas carry the project prefix (`<PREFIX>_API_URL`). Give them `.describe()` text; Incur prints it in help.
+- Environment schemas carry the project prefix (`<PREFIX>_API_URL`). Give them `.describe()` text; Incur prints it in help. Declare the schema once as a constant and pass it as `env` on each command that needs it: `c.env` inside a command is typed from that command's own `env`, not from the CLI-level `env` (which serves middleware).
 - Incur also exposes a Fetch and MCP surface. If the project wants it, add a `serve` command that binds explicitly to `HOST` and `PORT` (default port 0) through an injected `startHttpServer`, and refuse to run it when the command arrives over HTTP.
 
 ## Tests
 
-- `apps/cli/src/main.test.ts`: construct the CLI with in-memory dependencies and invoke commands directly. Assert on returned structured output, not on stdout.
+- `apps/cli/src/cli.test.ts`: construct the CLI with in-memory dependencies and run `cli.serve(['add', 'x', '--json'], { stdout, exit, env })`. `--json` prints the data object alone; the `{ ok, data }` envelope appears only with `--full-output`.
 
 ## Hubs
 
@@ -33,4 +33,4 @@ Add `"bin": { "<name>": "./src/main.ts" }` to `apps/cli/package.json`.
 
 ## Distribution
 
-Standalone binaries and installers belong to the [release](release.md) capability.
+Standalone binaries and installers belong to the [release](release.md) capability. Incur 0.5 ships `incur build`, which compiles all targets with Bun and writes installers; prefer it over a hand-written build script.

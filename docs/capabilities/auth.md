@@ -18,7 +18,8 @@ Clerk Core 3 (March 2026) removed `<Protect>`, `<SignedIn>`, and `<SignedOut>` i
 
 ## Next app
 
-- `apps/web/proxy.ts`: `export default clerkMiddleware()` from `@clerk/nextjs/server`, with the documented `config.matcher` (it includes `/__clerk/(.*)`). Protect routes with `createRouteMatcher` and `auth.protect()` inside the middleware callback, or per page.
+- `apps/web/proxy.ts`: `export default clerkMiddleware()` from `@clerk/nextjs/server`, with the documented `config.matcher` (it includes `/__clerk/(.*)`), minus `/api/health`: add `api/health` to the negative lookahead of the first matcher and replace `/(api|trpc)(.*)` with `/api/((?!health).*)`. Every matched request talks to Clerk's frontend API on the handshake path, so when Clerk is unreachable (outage, wrong keys, no network) matched routes hang or 500; the health check must stay outside. Bearer auth for `/api/v1` is Hono's job anyway. Protect routes with `createRouteMatcher` and `auth.protect()` inside the middleware callback, or per page.
+- Under `cacheComponents`, `auth()`, `<Show>`, and `<UserButton>` are request-bound: render them inside a `<Suspense>` boundary or the build fails on "uncached or runtime data during prerendering".
 - `app/layout.tsx` wraps children in `<ClerkProvider>`.
 - Server components and actions: `const { userId, orgId, has } = await auth()`; `auth()` is async. `currentUser()` for the profile.
 - Sign-in and sign-up are Clerk-hosted or the `<SignIn />` / `<SignUp />` components under `app/sign-in/[[...sign-in]]/page.tsx`.
@@ -80,11 +81,12 @@ Clerk Billing (Stripe underneath, USD only, no tax, no usage metering yet, 0.7% 
 ## Tests
 
 - Unit and component tests fake the auth boundary: `libs` receives a `principal`; server actions are tested through their `libs` calls. Clerk does not support unit tests.
-- Playwright: `@clerk/testing/playwright` with `clerkSetup()` in global setup and `setupClerkTestingToken()` per test, using `+clerk_test` emails and OTP `424242`. Needs live dev-instance keys in CI secrets; there is no offline Clerk.
+- Playwright: `@clerk/testing/playwright` with `clerkSetup()` in global setup and `setupClerkTestingToken()` per test, using `+clerk_test` emails and OTP `424242`. Needs live dev-instance keys in CI secrets and network access; there is no offline Clerk. With dummy keys the smoke test cannot even load `/`: the middleware hangs on its handshake and protected routes redirect to an unresolvable `accounts.<domain>`. Put `CLERK_SECRET_KEY` and `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` in CI secrets before adding this capability, or `test:e2e` fails from that commit on.
 
 ## Hubs
 
-- `.env.example`: `CLERK_PUBLISHABLE_KEY` (public), `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SIGNING_SECRET`.
+- `.env.example`: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SIGNING_SECRET`, `CLERK_TELEMETRY_DISABLED=1`.
+- `pnpm-workspace.yaml`: pnpm may add `minimumReleaseAgeExclude` entries for Clerk packages younger than its release-age policy; commit them knowingly.
 - `env` module: the three keys, secret ones server-only.
 - `AGENTS.md` invariants: "Auth is decided at the edge (proxy, server action, API middleware) and passed into `libs` as a principal. `libs` never imports Clerk. Gate by feature, never by plan name."
 - `AGENTS.md` check classification: "Auth: run the API middleware tests and the webhook handler tests; run Playwright when sign-in flow changes."

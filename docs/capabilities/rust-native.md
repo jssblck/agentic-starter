@@ -6,7 +6,7 @@ Rust belongs where native integration, performance, or type-level guarantees jus
 
 - `crates/<name>`: pure Rust library. No Node, HTTP, or database dependency. Owns the domain logic and its unit tests. A `build.rs` resolves `PROJECT_VERSION`, exact Git tag, or commit into a `VERSION` constant so TypeScript can compare identities at load time.
 - `crates/<name>-napi`: `crate-type = ["cdylib"]`, depends on the pure crate and `napi`. Translates errors and serialization only. `build.rs` calls `napi_build::setup()`.
-- `libs/native`: `load.ts` is the only file that loads `.node` code (a static `require('../artifacts/<name>.node')` through `createRequire(import.meta.url)`, so Bun can embed it when the release capability compiles a CLI). `decode.ts` treats addon output as `unknown` and proves its shape. `types.ts` declares the interface the rest of the code depends on. `artifacts/.gitkeep` marks the materialization directory.
+- `libs/native`: `load.cjs` is the only file that loads `.node` code: a CommonJS module, `module.exports.loadAddon = () => require('../artifacts/<name>.node')`, with `load.d.cts` declaring `loadAddon(): unknown`. It is CommonJS on purpose: a bare `require` of a `.node` path is what Bun embeds when the release capability compiles a CLI, and `createRequire(import.meta.url)` is not embedded (the binary fails with "Cannot find module ... from /$bunfs/root"). `decode.ts` treats addon output as `unknown` and proves its shape; narrow a callable with a type guard (`value is (input: unknown) => unknown`), since calling a `typeof === 'function'` value trips `no-unsafe-call`. `types.ts` declares the interface the rest of the code depends on. `artifacts/.gitkeep` marks the materialization directory.
 - `tools/native-cache.ts`: content-addressed cache of built addons.
 - `Cargo.toml` (workspace, resolver 3), `Cargo.lock` (committed), `rust-toolchain.toml` (pinned channel, `clippy` and `rustfmt` components, `minimal` profile).
 
@@ -14,7 +14,7 @@ Rust belongs where native integration, performance, or type-level guarantees jus
 
 Rust workspace: `napi = { version = "3", default-features = false, features = ["napi8"] }`, `napi-derive = "3"`, `napi-build = "2"`, `serde` + `serde_json` for the wire format, `thiserror = "2"`, `semver = "1"` for the build script. Toolchain 1.97.1.
 
-Root devDependency: `@napi-rs/cli` 3.7.3. `libs/native/package.json` carries `"napi": { "binaryName": "<name>" }`.
+`libs/native/package.json` carries `"napi": { "binaryName": "<name>" }`. A local build is `cargo build --release -p <name>-napi` and a copy of `target/release/lib<name>_napi.so` (`.dylib`, `.dll`) to `libs/native/artifacts/<name>.node`; `@napi-rs/cli` is only needed for cross-target release builds.
 
 ## Native cache
 
@@ -27,7 +27,7 @@ Flags: `--release`, `--force`, `--target <triple>` (used by the release build).
 - The pure crate has no Node or database dependency; the napi crate is a thin adapter.
 - Do not use `unwrap`; return an error or use `expect` only for a documented invariant.
 - Keep the Node-API surface coarse-grained. Prefer batches or buffers for hot paths.
-- Keep direct `.node` loading inside `libs/native/src/load.ts`.
+- Keep direct `.node` loading inside `libs/native/src/load.cjs`.
 - Run `pnpm run native:ensure` only when a real native integration test or executable needs the addon.
 
 ## Tests
@@ -40,7 +40,7 @@ Flags: `--release`, `--force`, `--target <triple>` (used by the release build).
 
 - `package.json`: `native:ensure`, `native:build` (`--release --force`), `rust:fmt`, `rust:fmt:check`, `rust:check` (`cargo check --locked --workspace --all-targets && cargo clippy --locked --workspace --all-targets --all-features -- -D warnings && cargo test --locked --workspace`). Add `rust:check` to `ci`, not `check`. Add `bootstrap` (`pnpm install --frozen-lockfile && pnpm run native:ensure`).
 - `.gitignore`: `target/`, `libs/native/artifacts/*` with `!libs/native/artifacts/.gitkeep`, `*.node`, `.cache/`.
-- `.oxlintrc.json`: ignore `target/**` and `libs/native/artifacts/**`; override `libs/native/src/load.ts` to allow `no-unsafe-assignment` and `no-unsafe-call` for the `require`.
+- `.oxlintrc.json`: ignore `target/**` and `libs/native/artifacts/**`; override `libs/native/src/load.cjs` to allow `typescript/no-unsafe-return` and `typescript/no-unsafe-call` for the `require`.
 - `.oxfmtrc.json`: ignore `target/**` and `libs/native/artifacts/**`.
 - `.nudge.yaml`: `rust-no-unwrap` on `**/*.rs` with the tree-sitter query `(call_expression function: (field_expression field: (field_identifier) @method) (#eq? @method "unwrap"))`; add fixtures.
 - `tools/doctor.ts`: probes for `rustc` and `cargo` pinned to the toolchain channel; report the addon as optional.
