@@ -83,7 +83,7 @@ pnpm run db:migrate
 - `pnpm-workspace.yaml`: `allowBuilds` entry `esbuild: true` (drizzle-kit).
 
 - `.github/workflows/ci.yml`: a `postgres:18-alpine` service on the `ci` job with `DATABASE_URL` (Postgres publishes on 127.0.0.1; a container that must reach it uses `--network host`), `pnpm run db:migrate` before `pnpm run ci`, and a PR-only step `pnpm run db:migrations:check -- --base "${{ github.event.pull_request.base.sha }}"`.
-- `.env.example`: `DATABASE_URL`.
+- `secrets/prod.env`: `DATABASE_URL`. Locally `.eph` supplies it from the assigned port.
 - `.nudge.yaml`: a `UserPromptSubmit` reminder on `(?i)(database|schema|migration|column|postgres|drizzle)` that says schema changes need generated SQL, matching input schemas, and migration tests. Add positive and negative fixtures and register them in `tools/check-nudge-rules.ts`.
 - `AGENTS.md` check classification: "Database schema: edit `libs/db/src/schema.ts`, run `pnpm run db:generate`, inspect the SQL, and add migration tests. Never edit a migration that may already have shipped."
 - `AGENTS.md` invariants: "Keep raw SQL and Drizzle access inside `libs/db`. Reach for Postgres before any second datastore."

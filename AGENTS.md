@@ -6,6 +6,7 @@ This repository is optimized for several coding agents working in separate Git w
 
 1. Read `docs/architecture.md` before editing.
 2. Run `pnpm run doctor` to see which local tools are available.
+   `pnpm secrets show dev` confirms this machine holds the `agent` key; `docs/secrets.md` explains elevation.
 3. Run `eph up` only when the task needs local services. Every worktree gets isolated containers and ports.
 4. On a fresh clone with no application code, use the `bootstrap` skill.
 
@@ -29,6 +30,7 @@ Classify the change so you run only what it needs:
 - Represent finite states with tagged unions and handle them exhaustively.
 - Generated files are outputs. Change their source and regenerate them.
 - Declare every imported package in the workspace that imports it. The isolated linker hides transitive packages locally but a fresh clone will not resolve them.
+- Secrets live in `secrets/<env>.env` and are read through `pnpm secrets` (`docs/secrets.md`). Do not create `.env` files. Do not commit `.age/` or an `AGE-SECRET-KEY`.
 
 ## Agent feedback loops
 

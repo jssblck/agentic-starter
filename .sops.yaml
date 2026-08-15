@@ -1,0 +1,7 @@
+# Recipients for the encrypted dotenv files in secrets/. See docs/secrets.md.
+# Replace the placeholder public keys with `age-keygen` output before `pnpm secrets init`.
+creation_rules:
+  - path_regex: secrets/dev\.env$
+    age: 'age1PERSONALPUBLICKEY,age1AGENTPUBLICKEY'
+  - path_regex: secrets/prod\.env$
+    age: 'age1PERSONALPUBLICKEY,age1PRODPUBLICKEY'

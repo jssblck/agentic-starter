@@ -12,7 +12,7 @@ A change that spans several packages belongs in one worktree and one commit seri
 
 Claude Code's `SessionStart` hook and Codex's setup script run the same three steps: fetch `origin/main`, `pnpm install --frozen-lockfile`, `eph up`. They stop when any step fails. They do not rebase the branch; look at the branch, then decide.
 
-Both tools copy the ignored files listed in `.worktreeinclude` (`.env`) into a new worktree. Neither copies `node_modules`.
+Neither tool copies `node_modules`. `.worktreeinclude` lists ignored files to copy into a new worktree; the base lists none, because secrets are committed encrypted (see below).
 
 `WorktreeRemove` and Codex cleanup run `eph clean`, which removes the worktree's containers, volumes, and saved eph state.
 
@@ -37,4 +37,4 @@ Services with `run=` must use `port=auto`; a Nudge rule rejects fixed ports. Tes
 
 ## Secrets
 
-A linked worktree does not inherit ignored files from another checkout unless `.worktreeinclude` lists them. Prefer eph-resolved values and a user-level secret manager. When a worktree needs a local secret file, have setup create or link it explicitly.
+Secrets are committed as sops-encrypted files, so every worktree has them at checkout and an agent decrypts dev secrets with the user-wide `agent` key. Elevation to prod is a gitignored file inside one checkout (`.age/elevated`) and does not leak to siblings. See [Secrets](secrets.md).

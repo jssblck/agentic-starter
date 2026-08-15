@@ -105,6 +105,8 @@ async function main(): Promise<void> {
     { name: 'pnpm', command: ['pnpm', '--version'], required: true, expectedVersion: pnpm },
     { name: 'docker', command: ['docker', '--version'], required: false },
     { name: 'eph', command: ['eph', '--version'], required: true },
+    { name: 'sops', command: ['sops', '--version', '--disable-version-check'], required: true },
+    { name: 'age', command: ['age-keygen', '--version'], required: false },
     { name: 'nudge', command: ['nudge', '--version'], required: false },
     { name: 'bastion', command: ['bastion', '--version'], required: false },
   ]

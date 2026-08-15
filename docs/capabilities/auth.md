@@ -85,7 +85,7 @@ Clerk Billing (Stripe underneath, USD only, no tax, no usage metering yet, 0.7% 
 
 ## Hubs
 
-- `.env.example`: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SIGNING_SECRET`, `CLERK_TELEMETRY_DISABLED=1`.
+- `secrets/dev.env` and `secrets/prod.env`: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SIGNING_SECRET`. `CLERK_TELEMETRY_DISABLED=1` is not secret; put it in `.eph` `[env]` and the container environment.
 - `pnpm-workspace.yaml`: pnpm may add `minimumReleaseAgeExclude` entries for Clerk packages younger than its release-age policy; commit them knowingly.
 - `env` module: the three keys, secret ones server-only.
 - `AGENTS.md` invariants: "Auth is decided at the edge (proxy, server action, API middleware) and passed into `libs` as a principal. `libs` never imports Clerk. Gate by feature, never by plan name."

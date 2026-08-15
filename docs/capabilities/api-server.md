@@ -57,7 +57,7 @@ Keep the `hono` version identical across workspaces; RPC types break across mism
 ## Hubs
 
 - `package.json`: standalone only: `dev:server` (`node --watch apps/server/src/main.ts`), `start:server` (`node apps/server/src/main.ts`). Node runs the TypeScript source directly in every environment; the container image copies the pruned workspace instead of a bundle (release capability).
-- `.eph`: standalone only: `[server]` block with `run=node --watch apps/server/src/main.ts`, `role=app`, `port=auto`, `env.PORT=${server.port}`; `[env]` entry `<PREFIX>_API_URL=http://localhost:${server.port}`. Mounted: the Next dev server already serves `/api`; point `<PREFIX>_API_URL` at it.
+- `.eph`: standalone only: `[server]` block with `run=node tools/secrets.ts exec dev -- node --watch apps/server/src/main.ts`, `role=app`, `port=auto`, `env.PORT=${server.port}`; `[env]` entry `<PREFIX>_API_URL=http://localhost:${server.port}`. Mounted: the Next dev server already serves `/api`; point `<PREFIX>_API_URL` at it.
 - `AGENTS.md` check classification: "API contract: change the route chain in `libs/api`, then run the API tests and `pnpm run typecheck` so every `hc` caller is checked."
 - `AGENTS.md` invariants: "Chain Hono routes; never call `app.get` as a statement. Pass an explicit status to every `c.json`. Only `libs/api` imports `hono`'s server side; callers import the client."
 

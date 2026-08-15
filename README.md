@@ -10,6 +10,7 @@ Create a repository from this template, clone it, and install the toolchain:
 - Node.js 24 or later
 - pnpm 11
 - eph
+- sops, and age for generating keys
 - Docker, when a capability adds containerized services
 - Nudge and Bastion, for the policy layer
 
@@ -35,6 +36,7 @@ The skill interviews you about the product, its identity, which surfaces it expo
 - Nudge rules that block type-system escape hatches, fixed development ports, and `npm`/`yarn`/`bun` package commands before the write happens.
 - A Bastion reviewer registry with no active reviewers and suggested defaults in comments.
 - eph for worktree-local services with assigned ports.
+- sops-encrypted secrets committed per environment, with a user-wide agent key for dev and per-checkout elevation for prod (`docs/secrets.md`).
 - Claude Code and Codex hooks that fetch, install, and start services in a fresh worktree, and clean up when it is removed.
 - `pnpm run doctor` to report which tools are present.
 
@@ -63,4 +65,5 @@ An agent can apply identity and code, but it cannot infer ownership or publishin
 - [Architecture](docs/architecture.md): design objective, package shape, boundaries, feedback layers.
 - [Technology choices](docs/technology.md): why this stack, and what would change the choice.
 - [Worktrees](docs/worktrees.md): per-agent isolation of checkouts, services, and state.
+- [Secrets](docs/secrets.md): encrypted secrets in the repository, agent access, elevation, production.
 - [Capabilities](docs/capabilities/README.md): the add-on guides.

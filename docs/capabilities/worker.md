@@ -60,10 +60,10 @@ pg-boss owns the `pgboss` schema and migrates it on `start()` under an advisory 
 ## Hubs
 
 - `package.json`: `dev:worker` (`node --watch apps/worker/src/main.ts`), `start:worker` (`node apps/worker/src/main.ts`).
-- `.eph`: `[worker]` block with `run=node --watch apps/worker/src/main.ts`, `role=app`; no port. eph injects the resolved top-level variables into `run=` processes, so `DATABASE_URL` from `[env]` arrives without repeating it.
+- `.eph`: `[worker]` block with `run=node tools/secrets.ts exec dev -- node --watch apps/worker/src/main.ts`, `role=app`; no port. eph injects the resolved top-level variables into `run=` processes, so `DATABASE_URL` from `[env]` arrives without repeating it; the secrets wrapper passes them through and adds the decrypted dev values.
 - `AGENTS.md` invariants: "Enqueue jobs inside the transaction that creates the data they reference. Handlers live in `libs`, are idempotent, and receive ids. Only `apps/worker` calls `boss.work`."
 - `AGENTS.md` check classification: "Jobs: run the handler tests and the registry test; run `test:integration` when the queue configuration changes."
-- Docker (release capability): its own image built by the container recipe in [Release](release.md) with `--filter @scope/worker...` and `CMD ["node", "apps/worker/src/main.ts"]`; on Railway, a second service from the same repo.
+- Docker (release capability): its own image built by the container recipe in [Release](release.md) with `--filter @scope/worker...` and `CMD ["node", "tools/secrets.ts", "exec", "prod", "--", "node", "apps/worker/src/main.ts"]`; on Railway, a second service from the same repo.
 
 ## Bastion reviewer
 

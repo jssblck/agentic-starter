@@ -28,7 +28,7 @@ Add `"bin": { "<name>": "./src/main.ts" }` to `apps/cli/package.json`.
 ## Hubs
 
 - `package.json`: add `"cli": "node apps/cli/src/main.ts"`. Development runs the CLI on Node; only the release capability compiles it with Bun.
-- `.eph`: only if the Fetch surface is used: a `[<name>]` block with `run=node --watch apps/cli/src/main.ts serve`, `role=app`, `port=auto`, `env.PORT=${<name>.port}`.
+- `.eph`: only if the Fetch surface is used: a `[<name>]` block with `run=node tools/secrets.ts exec dev -- node --watch apps/cli/src/main.ts serve`, `role=app`, `port=auto`, `env.PORT=${<name>.port}`.
 - `AGENTS.md` invariants: "Define commands, options, environment variables, help, and version handling with Incur in `apps`. Keep Incur definitions in `cli.ts` and executable entrypoints in `main.ts`."
 
 ## Distribution

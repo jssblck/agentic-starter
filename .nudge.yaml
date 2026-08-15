@@ -98,6 +98,23 @@ rules:
           - kind: Regex
             pattern: '(?m)^run=.+\n(?:[^\n\[]+\n)*port=[0-9]+$'
 
+  - name: secrets-no-plaintext-age-identity
+    description: Age private keys belong in the user key file, .age/elevated, or a platform variable, never in a tracked file
+    message: 'Do not write an age private key into the repository. Put it in ~/.config/sops/age/keys.txt, pipe it to `pnpm secrets elevate`, or set SOPS_AGE_KEY on the platform. See docs/secrets.md.'
+    on:
+      - hook: PreToolUse
+        tool: Write
+        file: '**/*'
+        content:
+          - kind: Regex
+            pattern: 'AGE-SECRET-KEY-1[0-9A-Z]{20,}'
+      - hook: PreToolUse
+        tool: Edit
+        file: '**/*'
+        new_content:
+          - kind: Regex
+            pattern: 'AGE-SECRET-KEY-1[0-9A-Z]{20,}'
+
   - name: use-pnpm-run
     description: Keep one JavaScript package-manager surface
     action: substitute

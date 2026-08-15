@@ -36,7 +36,8 @@ Trace the current identity by role, not by string:
 - `.codex/environments/environment.toml` name
 - `NOTICE`, `SECURITY.md`, `LICENSE` holder, `README.md` first heading and paragraph
 - `.github/CODEOWNERS` teams
-- environment prefix in `.eph` `[env]` and any `.env.example`
+- environment prefix in `.eph` `[env]`
+- `.sops.yaml` recipients: replace the placeholder public keys with the user's `personal`, `agent`, and `prod` keys, then `pnpm secrets init dev` and `pnpm secrets init prod` (see `docs/secrets.md`)
 - the migration lock name and cache namespace when those capabilities are added
 
 Do not run a repository-wide search-and-replace. The forms differ (`todoctl`, `TODO_API_URL`, `@starter/`, "Agentic Starter").

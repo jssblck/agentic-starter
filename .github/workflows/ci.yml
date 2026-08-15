@@ -32,5 +32,9 @@ jobs:
         run: curl -sSfL https://raw.githubusercontent.com/jssblck/bastion/main/scripts/install.sh | bash
       - name: Install eph
         run: curl -sSfL https://raw.githubusercontent.com/attunehq/doteph/main/scripts/install.sh | bash
+      - name: Install sops
+        run: |
+          curl -sSfL -o /usr/local/bin/sops https://github.com/getsops/sops/releases/download/v3.13.3/sops-v3.13.3.linux.amd64
+          chmod 755 /usr/local/bin/sops
       - run: pnpm install --frozen-lockfile
       - run: pnpm run ci

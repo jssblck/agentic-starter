@@ -52,3 +52,5 @@ Each agent works in one complete Git worktree. Branch-sensitive state (dependenc
 The Claude `SessionStart` hook and the Codex setup script fetch `origin/main`, install locked dependencies, and start eph services. They do not rebase; that decision belongs to the agent once it has looked at the branch. `WorktreeRemove` and Codex cleanup run `eph clean` so a removed worktree takes its containers and volumes with it.
 
 Never share a `node_modules` directory or a build output directory between worktrees by symlink.
+
+Secrets are sops-encrypted dotenv files committed per environment. Every checkout has them; the user-wide `agent` age key decrypts dev, and a gitignored per-checkout file elevates one worktree to prod. Production services hold only the `prod` key and decrypt at boot, so secrets ship with the commit that needs them. See [Secrets](secrets.md).

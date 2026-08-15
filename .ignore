@@ -1,0 +1,2 @@
+# nudge check reads this file. The positive fixture must contain what the rule blocks.
+tests/fixtures/nudge/secrets-age-identity-positive.txt

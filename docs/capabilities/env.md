@@ -32,12 +32,12 @@ Both accept Zod 4 (Standard Schema). For a process without a client bundle, `env
 
   Bracket access is what `noPropertyAccessFromIndexSignature` requires; Next still inlines `NEXT_PUBLIC_*` for a literal key. Client variables must carry `NEXT_PUBLIC_`. With `output: 'standalone'`, add both `@t3-oss/env-nextjs` and `@t3-oss/env-core` to `transpilePackages`.
 
-  Do not import the env module from `next.config.ts`. `next build` already evaluates every route module that imports it, and `next typegen` (which runs in `check`) would need every server variable too. Run `typegen` and `build:web` with `SKIP_ENV_VALIDATION=1`; validation happens at boot. Note that a throw inside Next's `instrumentation.ts` does not stop the server (see [Web app](web-app.md)); the container entrypoint runs a one-line env check before `server.js`.
+  Do not import the env module from `next.config.ts`. `next build` already evaluates every route module that imports it, and `next typegen` (which runs in `check`) would need every server variable too. Run `typegen` and `build:web` with `SKIP_ENV_VALIDATION=1`; validation happens at boot. Note that a throw inside Next's `instrumentation.ts` does not stop the server (see [Web app](web-app.md)); the container entrypoint runs a one-line env check before `server.js`. Local processes and containers start through `pnpm secrets exec <env> --` so the decrypted values are in `process.env` before the schema runs.
 
 - `apps/server/src/env.ts`, `apps/worker/src/env.ts`: `createEnv({ server, runtimeEnv: process.env, emptyStringAsUndefined: true })`.
 - `apps/cli`: Incur already declares env schemas per command; do not add a second layer.
 - `libs` never read the environment. They receive configuration as constructor arguments from the app that decoded it.
-- `.env.example` lists every variable with a comment and a safe local value; `.eph` supplies the ones that depend on assigned ports.
+- Secret values live in `secrets/<env>.env` ([Secrets](../secrets.md)); `.eph` supplies the ones that depend on assigned ports; everything else has a schema default. There is no `.env.example`: the schema is the list.
 
 ## Nudge rule
 
@@ -46,4 +46,4 @@ Both accept Zod 4 (Standard Schema). For a process without a client bundle, `env
 ## Hubs
 
 - `AGENTS.md` invariants: "Decode `process.env` once per process in `env.ts`. `libs` receive configuration as arguments."
-- `.gitignore` already ignores `.env` and `.env.*` except `.env.example`.
+- `.gitignore` already ignores `.env` and `.env.*` so a stray file never lands in a commit.
