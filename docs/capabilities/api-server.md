@@ -62,7 +62,7 @@ Keep the `hono` version identical across workspaces; RPC types break across mism
 
 ## Bastion reviewer
 
-Add to `.bastion.yaml` with the API:
+Add to `.bastion.yaml` with the API, commented out like the base defaults; uncomment it when the project decides to pay for it:
 
 ```yaml
 reviewers:

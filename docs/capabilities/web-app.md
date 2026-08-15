@@ -114,7 +114,7 @@ Invariants (add to `AGENTS.md`):
 
 ## Bastion reviewers
 
-The rules below are semantic; Nudge cannot express them. Add these to `.bastion.yaml` when the web app lands. Each is scoped to the paths it governs so it does not run on unrelated changes, and each is one concern.
+The rules below are semantic; Nudge cannot express them. Add them to `.bastion.yaml` when the web app lands, commented out like the base defaults, and uncomment each one when the project decides to pay for it. Each is scoped to the paths it governs so it does not run on unrelated changes, and each is one concern.
 
 ```yaml
 reviewers:
